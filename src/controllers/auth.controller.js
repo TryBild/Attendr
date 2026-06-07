@@ -9,7 +9,7 @@ export async function requestOtp(req, res) {
     const { phone } = req.body;
     if (!phone) return err(res, "phone required", 400);
     await createAndSendOtp(phone);
-    res.json(ok(res, { message: "OTP sent" }));
+    return res.json({ ok: true, message: "OTP sent" });
   } catch (e) { err(res, e.message); }
 }
 
