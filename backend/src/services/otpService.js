@@ -11,10 +11,11 @@ async function sendFast2SMS(mobile, otp) {
       const res = await axios.post(
         "https://www.fast2sms.com/dev/bulkV2",
         {
-          route:     "otp",
-          variables_values: otp,
-          numbers:   mobile,
-          flash:     0,
+          route:    "q",
+          message:  `${otp} is your Attendr OTP. Valid for 10 minutes. Do not share.`,
+          language: "english",
+          flash:    0,
+          numbers:  mobile,
         },
         {
           headers: { authorization: apiKey },
