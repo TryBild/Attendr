@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
 
 import Welcome        from "./pages/Welcome";
+import RoleSelector   from "./pages/RoleSelector";
 import EmployeeRegister from "./pages/auth/EmployeeRegister";
 import EmployeeOTP    from "./pages/auth/EmployeeOTP";
 import AdminLogin     from "./pages/auth/AdminLogin";
@@ -35,6 +36,7 @@ function RootRedirect() {
 export const router = createBrowserRouter([
   { path: "/",               element: <RootRedirect /> },
   { path: "/welcome",        element: <Welcome /> },
+  { path: "/role",           element: <RoleSelector /> },
   { path: "/register",       element: <EmployeeRegister /> },
   { path: "/verify-otp",     element: <EmployeeOTP /> },
   { path: "/admin/login",    element: <AdminLogin /> },
