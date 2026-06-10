@@ -40,7 +40,7 @@ fun RegisterScreen(navController: NavController) {
         when (val s = state) {
             is RegisterState.OtpSent -> {
                 navController.navigate(
-                    "otp/${Uri.encode(s.phone)}?name=${Uri.encode(name)}&orgId=${Uri.encode(orgId)}"
+                    "otp/${Uri.encode(s.mobile)}?name=${Uri.encode(name)}&orgId=${Uri.encode(orgId)}"
                 )
                 vm.resetState()
             }
@@ -130,7 +130,7 @@ fun RegisterScreen(navController: NavController) {
                         stringResource(R.string.btn_sending_otp)
                     else
                         stringResource(R.string.btn_continue),
-                    onClick = { vm.requestOtp(phone) },
+                    onClick = { vm.requestOtp(name.trim(), phone, orgId.trim()) },
                     enabled = isValid && state !is RegisterState.Loading
                 )
             }
