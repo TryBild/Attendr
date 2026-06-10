@@ -1,8 +1,7 @@
 package com.trybild.attendr.data.model
 
-data class OtpRequestBody(val phone: String)
-data class AdminVerifyBody(val phone: String, val code: String, val companyName: String? = null)
-data class EmployeeVerifyBody(val phone: String, val code: String, val deviceId: String)
+data class OtpRequestBody(val fullName: String, val mobile: String, val teamId: String)
+data class OtpVerifyBody(val mobile: String, val teamId: String, val otp: String)
 data class OtpResponse(val ok: Boolean, val message: String?)
 data class AuthResponse(val ok: Boolean, val token: String?, val name: String?, val companyId: String?, val error: String?)
 data class MarkAttendanceBody(val type: String, val lat: Double?, val lng: Double?, val mock: Boolean = false)

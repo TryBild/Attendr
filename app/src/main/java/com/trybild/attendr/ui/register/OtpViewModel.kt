@@ -5,12 +5,11 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.trybild.attendr.data.api.RetrofitClient
 import com.trybild.attendr.data.local.TokenDataStore
-import com.trybild.attendr.data.model.AdminVerifyBody
 import com.trybild.attendr.data.model.OtpRequestBody
+import com.trybild.attendr.data.model.OtpVerifyBody
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import java.util.UUID
 
 sealed class OtpUiState {
     object Idle : OtpUiState()
@@ -27,22 +26,16 @@ class OtpViewModel(app: Application) : AndroidViewModel(app) {
     private val _state = MutableStateFlow<OtpUiState>(OtpUiState.Idle)
     val state: StateFlow<OtpUiState> = _state
 
-    fun verifyOtp(phone: String, code: String, orgId: String) {
+    fun verifyOtp(mobile: String, otp: String, teamId: String) {
         viewModelScope.launch {
             _state.value = OtpUiState.Loading
             try {
-                val res = api.verifyAdmin(AdminVerifyBody(phone, code, orgId.ifBlank { null }))
+                val res = api.verifyOtp(OtpVerifyBody(mobile, teamId, otp))
                 if (res.isSuccessful && res.body()?.ok == true) {
                     res.body()?.token?.let { dataStore.saveToken(it) }
-                    dataStore.saveDeviceId(UUID.randomUUID().toString())
                     _state.value = OtpUiState.Success
                 } else {
-                    val err = res.body()?.error ?: "Invalid OTP"
-                    _state.value = OtpUiState.Error(
-                        if (err.contains("org", ignoreCase = true) || err.contains("company", ignoreCase = true))
-                            "Organization not found. Please contact your administrator."
-                        else err
-                    )
+                    _state.value = OtpUiState.Error(res.body()?.error ?: "Invalid OTP")
                 }
             } catch (e: Exception) {
                 _state.value = OtpUiState.Error(e.message ?: "Network error")
@@ -50,10 +43,10 @@ class OtpViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun resendOtp(phone: String) {
+    fun resendOtp(fullName: String, mobile: String, teamId: String) {
         viewModelScope.launch {
             try {
-                val res = api.requestOtp(OtpRequestBody(phone))
+                val res = api.requestOtp(OtpRequestBody(fullName, mobile, teamId))
                 _state.value = if (res.isSuccessful && res.body()?.ok == true)
                     OtpUiState.OtpResent
                 else OtpUiState.Error("Failed to resend OTP. Try again.")

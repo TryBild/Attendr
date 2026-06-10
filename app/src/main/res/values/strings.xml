@@ -1,3 +1,55 @@
 <resources>
     <string name="app_name">Attendr</string>
+
+    <!-- Content Descriptions -->
+    <string name="cd_back">Back</string>
+    <string name="cd_menu">Menu</string>
+    <string name="logo_content_description">Attendr logo</string>
+
+    <!-- Welcome Screen -->
+    <string name="welcome_title">Welcome to Attendr</string>
+    <string name="welcome_subtitle">Smart attendance, made simple.</string>
+    <string name="btn_agree_continue">Agree &amp; Continue</string>
+    <string name="privacy_link_policy">Privacy Policy</string>
+    <string name="privacy_link_terms">Terms of Service</string>
+    <string name="privacy_link_data">Data Usage Policy</string>
+    <string name="lang_selection_label">Language</string>
+    <string name="lang_dialog_title">Select Language</string>
+    <string name="btn_close">Close</string>
+
+    <!-- Overflow Menu -->
+    <string name="menu_contact_support">Contact Support</string>
+    <string name="menu_help_center">Help Center</string>
+    <string name="menu_terms">Terms of Service</string>
+    <string name="menu_privacy">Privacy Policy</string>
+
+    <!-- Register Screen -->
+    <string name="register_title">Create Account</string>
+    <string name="label_full_name">Full Name</string>
+    <string name="placeholder_full_name">John Doe</string>
+    <string name="label_mobile_number">Mobile Number</string>
+    <string name="placeholder_mobile_number">10-digit number</string>
+    <string name="helper_mobile_otp">OTP will be sent to this number</string>
+    <string name="country_code">+91</string>
+    <string name="label_org_id">Organisation ID</string>
+    <string name="placeholder_org_id">Enter org ID</string>
+    <string name="btn_sending_otp">Sending OTP…</string>
+    <string name="btn_continue">Continue</string>
+
+    <!-- Contact Support Screen -->
+    <string name="support_title">Contact Support</string>
+    <string name="support_description_label">Description</string>
+    <string name="support_description_placeholder">Describe your issue in detail…</string>
+    <string name="support_issue_type_label">Issue Type</string>
+    <string name="support_attach_label">Attachments (optional)</string>
+    <string name="support_email_label">Your Email</string>
+    <string name="support_email_placeholder">your@email.com</string>
+    <string name="btn_submit_request">Submit Request</string>
+    <string name="support_size_error">File too large (max 10 MB)</string>
+    <string name="send_via_email">Send via email</string>
+
+    <!-- Legal Screens -->
+    <string name="terms_title">Terms of Service</string>
+    <string name="privacy_title">Privacy Policy</string>
+    <string name="data_usage_title">Data Usage</string>
 </resources>
