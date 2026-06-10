@@ -167,7 +167,7 @@ fun OtpScreen(
                             color = AttendrTextSecondary
                         )
                     } else {
-                        TextButton(onClick = { vm.resendOtp(phone) }) {
+                        TextButton(onClick = { vm.resendOtp(name, phone, orgId) }) {
                             Text("Resend", color = AttendrNavy)
                         }
                     }

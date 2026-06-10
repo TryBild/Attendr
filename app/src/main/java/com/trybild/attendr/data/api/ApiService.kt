@@ -8,11 +8,8 @@ interface ApiService {
     @POST("auth/otp/request")
     suspend fun requestOtp(@Body body: OtpRequestBody): Response<OtpResponse>
 
-    @POST("auth/admin/verify")
-    suspend fun verifyAdmin(@Body body: AdminVerifyBody): Response<AuthResponse>
-
-    @POST("auth/employee/verify")
-    suspend fun verifyEmployee(@Body body: EmployeeVerifyBody): Response<AuthResponse>
+    @POST("auth/otp/verify")
+    suspend fun verifyOtp(@Body body: OtpVerifyBody): Response<AuthResponse>
 
     @POST("attendance/mark")
     suspend fun markAttendance(
