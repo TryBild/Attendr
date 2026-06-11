@@ -14,6 +14,7 @@ import reportsRoutes    from "./routes/reports.routes.js";
 import supportRoutes    from "./routes/support.routes.js";
 
 const app = express();
+app.set('trust proxy', 1);
 
 // Security middleware
 app.use(helmet());
