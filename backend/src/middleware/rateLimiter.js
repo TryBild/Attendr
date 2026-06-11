@@ -1,9 +1,9 @@
-import rateLimit from "express-rate-limit";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 
 export const otpRateLimiter = rateLimit({
   windowMs:         10 * 60 * 1000,
   max:              5,
-  keyGenerator:     (req) => req.body?.mobile || req.ip,
+  keyGenerator:     (req) => req.body?.mobile || ipKeyGenerator(req),
   standardHeaders:  true,
   legacyHeaders:    false,
   handler: (_req, res) => {
@@ -14,6 +14,7 @@ export const otpRateLimiter = rateLimit({
 export const generalLimiter = rateLimit({
   windowMs:        15 * 60 * 1000,
   max:             200,
+  keyGenerator:    ipKeyGenerator,
   standardHeaders: true,
   legacyHeaders:   false,
   handler: (_req, res) => {
