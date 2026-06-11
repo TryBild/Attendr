@@ -26,7 +26,8 @@ app.use(morgan("dev"));
 app.use(express.json({ limit: "10mb" }));
 app.use(generalLimiter);
 
-// Health check
+// Health checks
+app.get("/health",     (_req, res) => res.status(200).json({ status: "ok" }));
 app.get("/api/health", (_req, res) => res.json({ ok: true, app: "Attendr", v: "1.0.0" }));
 
 // Routes
