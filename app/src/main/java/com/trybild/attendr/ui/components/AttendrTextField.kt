@@ -6,13 +6,9 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.trybild.attendr.ui.theme.AttendrBorder
 import com.trybild.attendr.ui.theme.AttendrNavy
-import com.trybild.attendr.ui.theme.AttendrTextPrimary
-import com.trybild.attendr.ui.theme.AttendrTextSecondary
 
 @Composable
 fun AttendrTextField(
@@ -26,34 +22,24 @@ fun AttendrTextField(
     enabled: Boolean = true,
     singleLine: Boolean = true,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
-    visualTransformation: VisualTransformation = VisualTransformation.None,
     leadingContent: @Composable (() -> Unit)? = null,
     trailingContent: @Composable (() -> Unit)? = null
 ) {
     val isError = errorText.isNotEmpty()
     Column(modifier = modifier) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Medium,
-            color = AttendrTextPrimary,
-            modifier = Modifier.padding(bottom = 6.dp)
-        )
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
-            placeholder = if (placeholder.isNotEmpty()) ({
-                Text(placeholder, color = AttendrTextSecondary)
-            }) else null,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+            label = { Text(label) },
+            placeholder = if (placeholder.isNotEmpty()) ({ Text(placeholder) }) else null,
+            modifier = Modifier.fillMaxWidth(),
             enabled = enabled,
             isError = isError,
             singleLine = singleLine,
             keyboardOptions = keyboardOptions,
-            visualTransformation = visualTransformation,
             leadingIcon = leadingContent,
             trailingIcon = trailingContent,
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(8.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = AttendrNavy,
                 unfocusedBorderColor = AttendrBorder
@@ -64,14 +50,14 @@ fun AttendrTextField(
                 text = errorText,
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.labelSmall,
-                modifier = Modifier.padding(start = 4.dp, top = 4.dp)
+                modifier = Modifier.padding(start = 4.dp, top = 2.dp)
             )
         } else if (helperText.isNotEmpty()) {
             Text(
                 text = helperText,
-                color = AttendrTextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.labelSmall,
-                modifier = Modifier.padding(start = 4.dp, top = 4.dp)
+                modifier = Modifier.padding(start = 4.dp, top = 2.dp)
             )
         }
     }
