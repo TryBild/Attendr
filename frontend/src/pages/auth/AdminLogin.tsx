@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
+import AttendrLogo from "../../assets/attendr-logo.png";
 import toast from "react-hot-toast";
 import { adminLogin } from "../../api/auth";
 import { useAuth } from "../../hooks/useAuth";
@@ -50,9 +51,7 @@ export default function AdminLogin() {
       <div className="px-6 pt-16 pb-4">
         {/* Logo */}
         <div className="flex items-center gap-3 mb-10">
-          <div className="w-10 h-10 bg-blue-900 rounded-xl flex items-center justify-center">
-            <span className="text-white font-bold text-lg" style={{ fontFamily: "Nunito, sans-serif" }}>A</span>
-          </div>
+          <img src="/favicon.png" alt="Attendr" className="w-10 h-10 object-contain rounded-xl" />
           <span className="text-xl font-bold text-blue-900" style={{ fontFamily: "Nunito, sans-serif" }}>Attendr</span>
         </div>
 
