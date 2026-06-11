@@ -1,8 +1,7 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
 
-import Welcome        from "./pages/Welcome";
-import RoleSelector   from "./pages/RoleSelector";
+import Welcome          from "./pages/Welcome";
 import EmployeeRegister from "./pages/auth/EmployeeRegister";
 import EmployeeOTP    from "./pages/auth/EmployeeOTP";
 import AdminLogin     from "./pages/auth/AdminLogin";
@@ -25,18 +24,8 @@ import ContactSupport from "./pages/help/ContactSupport";
 
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
-function RootRedirect() {
-  const { isAuthenticated, kind } = useAuth();
-  const agreed = localStorage.getItem("agreedToTerms");
-  if (!agreed) return <Navigate to="/welcome" replace />;
-  if (!isAuthenticated) return <Navigate to="/register" replace />;
-  return <Navigate to={kind === "admin" ? "/admin/dashboard" : "/employee/home"} replace />;
-}
-
 export const router = createBrowserRouter([
-  { path: "/",               element: <RootRedirect /> },
-  { path: "/welcome",        element: <Welcome /> },
-  { path: "/role",           element: <RoleSelector /> },
+  { path: "/",               element: <Welcome /> },
   { path: "/register",       element: <EmployeeRegister /> },
   { path: "/verify-otp",     element: <EmployeeOTP /> },
   { path: "/admin/login",    element: <AdminLogin /> },
