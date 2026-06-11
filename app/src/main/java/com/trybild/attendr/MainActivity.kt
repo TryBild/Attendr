@@ -13,17 +13,21 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.trybild.attendr.data.local.TokenDataStore
+import com.trybild.attendr.ui.admin.AdminLoginScreen
+import com.trybild.attendr.ui.admin.AdminRegisterScreen
 import com.trybild.attendr.ui.help.ArticleScreen
 import com.trybild.attendr.ui.help.HelpCenterScreen
-import com.trybild.attendr.ui.home.HomeScreen
+import com.trybild.attendr.ui.home.AdminDashboardScreen
+import com.trybild.attendr.ui.home.EmployeeHomeScreen
 import com.trybild.attendr.ui.legal.DataUsageScreen
 import com.trybild.attendr.ui.legal.PrivacyScreen
 import com.trybild.attendr.ui.legal.TermsScreen
-import com.trybild.attendr.ui.register.OtpScreen
-import com.trybild.attendr.ui.register.RegisterScreen
+import com.trybild.attendr.ui.onboarding.RoleSelectionScreen
+import com.trybild.attendr.ui.register.EmployeeRegisterScreen
 import com.trybild.attendr.ui.support.ContactSupportScreen
 import com.trybild.attendr.ui.theme.AttendrTheme
 import com.trybild.attendr.ui.welcome.WelcomeScreen
+import com.trybild.attendr.utils.JwtUtils
 import kotlinx.coroutines.flow.first
 
 class MainActivity : ComponentActivity() {
@@ -46,17 +50,28 @@ fun AppNav() {
 
     LaunchedEffect(Unit) {
         val token = dataStore.token.first()
-        startDestination = if (token != null) "home" else "welcome"
+        startDestination = when {
+            token == null -> "role_selection"
+            JwtUtils.decodeTokenKind(token) == "admin" -> "admin_dashboard"
+            else -> "employee_home"
+        }
     }
 
     if (startDestination == null) return
 
     val navController = rememberNavController()
+
+    fun navigateClearingBackStack(route: String) {
+        navController.navigate(route) {
+            popUpTo(0) { inclusive = true }
+        }
+    }
+
     NavHost(navController = navController, startDestination = startDestination!!) {
 
         composable("welcome") {
             WelcomeScreen(
-                onContinue = { navController.navigate("register") },
+                onContinue = { navController.navigate("role_selection") },
                 onNavigateToSupport = { navController.navigate("support") },
                 onNavigateToHelp = { navController.navigate("help") },
                 onNavigateToTerms = { navController.navigate("legal/terms") },
@@ -65,28 +80,40 @@ fun AppNav() {
             )
         }
 
-        composable("register") {
-            RegisterScreen(navController = navController)
-        }
-
-        composable(
-            route = "otp/{phone}?name={name}&orgId={orgId}",
-            arguments = listOf(
-                navArgument("phone") { type = NavType.StringType },
-                navArgument("name") { defaultValue = "" },
-                navArgument("orgId") { defaultValue = "" }
-            )
-        ) { backStackEntry ->
-            OtpScreen(
-                phone = backStackEntry.arguments?.getString("phone") ?: "",
-                name = backStackEntry.arguments?.getString("name") ?: "",
-                orgId = backStackEntry.arguments?.getString("orgId") ?: "",
-                navController = navController
+        composable("role_selection") {
+            RoleSelectionScreen(
+                onContinueAsAdmin = { navController.navigate("admin_login") },
+                onContinueAsEmployee = { navController.navigate("employee_register") }
             )
         }
 
-        composable("home") {
-            HomeScreen()
+        composable("employee_register") {
+            EmployeeRegisterScreen(
+                onBackFromFirstStep = { navController.popBackStack() },
+                onRegistered = { navigateClearingBackStack("employee_home") }
+            )
+        }
+
+        composable("admin_login") {
+            AdminLoginScreen(
+                onLoggedIn = { navigateClearingBackStack("admin_dashboard") },
+                onCreateAccount = { navController.navigate("admin_register") }
+            )
+        }
+
+        composable("admin_register") {
+            AdminRegisterScreen(
+                onBack = { navController.popBackStack() },
+                onRegistered = { navigateClearingBackStack("admin_dashboard") }
+            )
+        }
+
+        composable("admin_dashboard") {
+            AdminDashboardScreen()
+        }
+
+        composable("employee_home") {
+            EmployeeHomeScreen()
         }
 
         composable("help") {
