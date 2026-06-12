@@ -11,6 +11,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.trybild.attendr.ui.components.LogoIcon
 
 @Composable
 fun LoginScreen(onLoginSuccess: () -> Unit) {
@@ -38,7 +39,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Attendr", style = MaterialTheme.typography.headlineLarge)
+        LogoIcon(size = 64.dp)
         Spacer(Modifier.height(4.dp))
         Text("Digital Attendance Register", style = MaterialTheme.typography.bodyMedium)
         Spacer(Modifier.height(40.dp))

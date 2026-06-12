@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
 
 import Welcome          from "./pages/Welcome";
+import RoleSelection    from "./pages/RoleSelection";
 import EmployeeRegister from "./pages/auth/EmployeeRegister";
 import EmployeeOTP    from "./pages/auth/EmployeeOTP";
 import AdminLogin     from "./pages/auth/AdminLogin";
@@ -26,6 +27,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 
 export const router = createBrowserRouter([
   { path: "/",               element: <Welcome /> },
+  { path: "/role",           element: <RoleSelection /> },
   { path: "/register",       element: <EmployeeRegister /> },
   { path: "/verify-otp",     element: <EmployeeOTP /> },
   { path: "/admin/login",    element: <AdminLogin /> },
