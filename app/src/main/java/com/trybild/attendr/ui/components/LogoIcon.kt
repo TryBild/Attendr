@@ -12,8 +12,9 @@ import com.trybild.attendr.R
 
 @Composable
 fun LogoIcon(size: Dp = 96.dp, modifier: Modifier = Modifier) {
+    val drawable = if (size >= 80.dp) R.drawable.ic_attendr_logo else R.drawable.ic_logo
     Image(
-        painter = painterResource(R.drawable.ic_logo),
+        painter = painterResource(drawable),
         contentDescription = stringResource(R.string.logo_content_description),
         modifier = modifier.size(size)
     )
