@@ -15,6 +15,8 @@ import androidx.navigation.navArgument
 import com.trybild.attendr.data.local.TokenDataStore
 import com.trybild.attendr.ui.admin.AdminHomeScreen
 import com.trybild.attendr.ui.admin.AdminLoginScreen
+import com.trybild.attendr.ui.admin.AdminRegisterScreen
+import com.trybild.attendr.ui.admin.AdminSetupScreen
 import com.trybild.attendr.ui.help.ArticleScreen
 import com.trybild.attendr.ui.help.HelpCenterScreen
 import com.trybild.attendr.ui.home.HomeScreen
@@ -50,8 +52,10 @@ fun AppNav() {
     LaunchedEffect(Unit) {
         val token = dataStore.token.first()
         val kind = dataStore.userKind.first()
+        val setup = dataStore.setupComplete.first()
         startDestination = when {
             token == null -> "welcome"
+            kind == "admin" && !setup -> "admin_setup"
             kind == "admin" -> "admin_home"
             else -> "home"
         }
@@ -79,6 +83,14 @@ fun AppNav() {
 
         composable("admin_login") {
             AdminLoginScreen(navController = navController)
+        }
+
+        composable("admin_register") {
+            AdminRegisterScreen(navController = navController)
+        }
+
+        composable("admin_setup") {
+            AdminSetupScreen(navController = navController)
         }
 
         composable("register") {
