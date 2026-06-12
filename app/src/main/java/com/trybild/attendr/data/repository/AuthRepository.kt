@@ -3,12 +3,8 @@ package com.trybild.attendr.data.repository
 import android.content.Context
 import com.trybild.attendr.data.api.RetrofitClient
 import com.trybild.attendr.data.local.TokenDataStore
-import com.trybild.attendr.data.model.AdminLoginRequest
-import com.trybild.attendr.data.model.AdminLoginResponse
-import com.trybild.attendr.data.model.AuthResponse
-import com.trybild.attendr.data.model.OtpRequestBody
-import com.trybild.attendr.data.model.OtpResponse
-import com.trybild.attendr.data.model.OtpVerifyBody
+import com.trybild.attendr.data.model.*
+import kotlinx.coroutines.flow.firstOrNull
 
 class AuthRepository(context: Context) {
     private val api = RetrofitClient.api
@@ -59,6 +55,75 @@ class AuthRepository(context: Context) {
                 Result.success(body)
             } else {
                 val msg = res.body()?.error ?: "Invalid OTP. Please try again."
+                Result.failure(Exception(msg))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception(e.message ?: "Network error"))
+        }
+    }
+
+    suspend fun adminRegister(
+        orgName: String, adminName: String, email: String,
+        phone: String, city: String, orgSize: String, password: String
+    ): Result<AdminRegisterResponse> {
+        return try {
+            val res = api.adminRegister(
+                AdminRegisterRequest(orgName, adminName, email, phone, city, orgSize, password)
+            )
+            if (res.isSuccessful && res.body()?.ok == true) {
+                val body = res.body()!!
+                body.token?.let { dataStore.saveToken(it) }
+                dataStore.saveUserKind("admin")
+                dataStore.saveSetupComplete(false)
+                body.orgId?.let { dataStore.saveOrgId(it) }
+                Result.success(body)
+            } else {
+                val msg = res.body()?.error
+                    ?: res.errorBody()?.string()
+                    ?: "Registration failed"
+                Result.failure(Exception(msg))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception(e.message ?: "Network error"))
+        }
+    }
+
+    suspend fun adminSetup(
+        industry: String, workDays: List<String>,
+        workStartTime: String, workEndTime: String,
+        timezone: String, referralSource: String
+    ): Result<AdminSetupResponse> {
+        return try {
+            val token = dataStore.token.firstOrNull()
+                ?: return Result.failure(Exception("Not logged in"))
+            val res = api.adminSetup(
+                "Bearer $token",
+                AdminSetupRequest(industry, workDays, workStartTime, workEndTime, timezone, referralSource)
+            )
+            if (res.isSuccessful && res.body()?.ok == true) {
+                dataStore.saveSetupComplete(true)
+                Result.success(res.body()!!)
+            } else {
+                val msg = res.body()?.error ?: "Setup failed"
+                Result.failure(Exception(msg))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception(e.message ?: "Network error"))
+        }
+    }
+
+    suspend fun adminProfile(): Result<AdminProfileResponse> {
+        return try {
+            val token = dataStore.token.firstOrNull()
+                ?: return Result.failure(Exception("Not logged in"))
+            val res = api.adminProfile("Bearer $token")
+            if (res.isSuccessful && res.body()?.ok == true) {
+                val body = res.body()!!
+                dataStore.saveSetupComplete(body.setupComplete)
+                body.orgId?.let { dataStore.saveOrgId(it) }
+                Result.success(body)
+            } else {
+                val msg = res.body()?.error ?: "Could not fetch profile"
                 Result.failure(Exception(msg))
             }
         } catch (e: Exception) {
