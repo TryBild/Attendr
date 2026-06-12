@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-50:  #EEF2FF;
+  --color-brand-100: #E0E7FF;
+  --color-brand-500: #1E3A8A;
+  --color-brand-600: #1E40AF;
+  --color-brand-700: #1D4ED8;
+  --color-brand-900: #1E3A5F;
+  --color-surface:   #FFFFFF;
+  --color-muted:     #F8FAFC;
+  --color-border:    #E2E8F0;
+
+  --font-sans:     'Inter', system-ui, sans-serif;
+  --font-heading:  'Nunito', 'Inter', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  background: #F8FAFC;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-heading);
+}
+
+/* Safe area for mobile */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 16px);
+}
+
+/* Remove number input spinners */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type=number] { -moz-appearance: textfield; }
