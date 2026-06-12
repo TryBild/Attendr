@@ -6,6 +6,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.trybild.attendr.ui.theme.AttendrBorder
 import com.trybild.attendr.ui.theme.AttendrNavy
@@ -22,6 +23,7 @@ fun AttendrTextField(
     enabled: Boolean = true,
     singleLine: Boolean = true,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
     leadingContent: @Composable (() -> Unit)? = null,
     trailingContent: @Composable (() -> Unit)? = null
 ) {
@@ -37,6 +39,7 @@ fun AttendrTextField(
             isError = isError,
             singleLine = singleLine,
             keyboardOptions = keyboardOptions,
+            visualTransformation = visualTransformation,
             leadingIcon = leadingContent,
             trailingIcon = trailingContent,
             shape = RoundedCornerShape(8.dp),

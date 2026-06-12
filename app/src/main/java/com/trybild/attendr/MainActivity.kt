@@ -13,6 +13,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.trybild.attendr.data.local.TokenDataStore
+import com.trybild.attendr.ui.admin.AdminHomeScreen
+import com.trybild.attendr.ui.admin.AdminLoginScreen
 import com.trybild.attendr.ui.help.ArticleScreen
 import com.trybild.attendr.ui.help.HelpCenterScreen
 import com.trybild.attendr.ui.home.HomeScreen
@@ -21,6 +23,7 @@ import com.trybild.attendr.ui.legal.PrivacyScreen
 import com.trybild.attendr.ui.legal.TermsScreen
 import com.trybild.attendr.ui.register.OtpScreen
 import com.trybild.attendr.ui.register.RegisterScreen
+import com.trybild.attendr.ui.roleselection.RoleSelectionScreen
 import com.trybild.attendr.ui.support.ContactSupportScreen
 import com.trybild.attendr.ui.theme.AttendrTheme
 import com.trybild.attendr.ui.welcome.WelcomeScreen
@@ -46,7 +49,12 @@ fun AppNav() {
 
     LaunchedEffect(Unit) {
         val token = dataStore.token.first()
-        startDestination = if (token != null) "home" else "welcome"
+        val kind = dataStore.userKind.first()
+        startDestination = when {
+            token == null -> "welcome"
+            kind == "admin" -> "admin_home"
+            else -> "home"
+        }
     }
 
     if (startDestination == null) return
@@ -56,13 +64,21 @@ fun AppNav() {
 
         composable("welcome") {
             WelcomeScreen(
-                onContinue = { navController.navigate("register") },
+                onContinue = { navController.navigate("role_selection") },
                 onNavigateToSupport = { navController.navigate("support") },
                 onNavigateToHelp = { navController.navigate("help") },
                 onNavigateToTerms = { navController.navigate("legal/terms") },
                 onNavigateToPrivacy = { navController.navigate("legal/privacy") },
                 onNavigateToDataUsage = { navController.navigate("legal/data-usage") }
             )
+        }
+
+        composable("role_selection") {
+            RoleSelectionScreen(navController = navController)
+        }
+
+        composable("admin_login") {
+            AdminLoginScreen(navController = navController)
         }
 
         composable("register") {
@@ -87,6 +103,10 @@ fun AppNav() {
 
         composable("home") {
             HomeScreen()
+        }
+
+        composable("admin_home") {
+            AdminHomeScreen()
         }
 
         composable("help") {

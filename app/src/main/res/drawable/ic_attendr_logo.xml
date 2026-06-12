@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+    <!-- Navy A shape with crossbar -->
+    <path
+        android:fillColor="#1B3A7B"
+        android:pathData="M60,17 L100,100 L87,100 L60,47 L33,100 L20,100 Z M40,75 L80,75 L80,86 L40,86 Z" />
+    <!-- White checkmark on navy crossbar -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="5.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M45,81 L54,86 L72,75" />
+</vector>
