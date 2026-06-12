@@ -31,7 +31,7 @@ export default function Welcome() {
   function handleContinue() {
     localStorage.setItem("attendr_lang", lang);
     localStorage.setItem("agreedToTerms", JSON.stringify({ agreedToTerms: true }));
-    navigate("/register");
+    navigate("/role");
   }
 
   return (

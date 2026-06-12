@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.trybild.attendr.ui.components.LogoIcon
 
 @Composable
 fun HomeScreen() {
@@ -51,7 +52,7 @@ fun HomeScreen() {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(Modifier.height(40.dp))
-        Text("Attendr", style = MaterialTheme.typography.headlineLarge)
+        LogoIcon(size = 64.dp)
         Spacer(Modifier.height(32.dp))
 
         if (!locationGranted) {
