@@ -179,12 +179,13 @@ export async function adminLogin(req, res) {
       ok: true,
       token,
       company: {
-        id:     company._id,
-        name:   company.name,
-        teamId: company.teamId,
-        plan:   company.plan,
-        city:   company.city,
-        state:  company.state,
+        id:           company._id,
+        name:         company.name,
+        teamId:       company.teamId,
+        plan:         company.plan,
+        city:         company.city,
+        state:        company.state,
+        setupComplete: company.setupComplete ?? false,
       },
     });
   } catch (e) {
@@ -193,38 +194,53 @@ export async function adminLogin(req, res) {
   }
 }
 
+function generateOrgId() {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const part = (n) => Array.from({ length: n }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+  return `ATT-${part(4)}-${part(4)}`;
+}
+
 // POST /api/auth/admin/register
 export async function adminRegister(req, res) {
   try {
-    const { companyName, adminEmail, password, city, state } = req.body;
-    if (!companyName || !adminEmail || !password)
-      return err(res, "companyName, adminEmail, and password are required", 400);
-    if (password.length < 8) return err(res, "Password must be at least 8 characters.", 400);
+    const { orgName, adminName, email, phone, city, orgSize, password } = req.body;
 
-    const existing = await Company.findOne({ adminEmail: adminEmail.toLowerCase() });
+    if (!orgName || !adminName || !email || !phone || !city || !orgSize || !password)
+      return err(res, "All fields are required", 400);
+    if (orgName.trim().length < 2)
+      return err(res, "Organization name must be at least 2 characters", 400);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+      return err(res, "Invalid email format", 400);
+    if (!/^\d{10}$/.test(phone))
+      return err(res, "Phone must be exactly 10 digits", 400);
+    if (password.length < 8)
+      return err(res, "Password must be at least 8 characters", 400);
+
+    const existing = await Company.findOne({ adminEmail: email.toLowerCase() });
     if (existing) return err(res, "An account with this email already exists.", 409);
 
     const hashed = await bcrypt.hash(password, 12);
 
-    // Generate unique teamId
-    let teamId;
+    let orgId;
     for (let i = 0; i < 10; i++) {
-      const candidate = generateTeamId(companyName);
+      const candidate = generateOrgId();
       const clash = await Company.findOne({ teamId: candidate });
-      if (!clash) { teamId = candidate; break; }
+      if (!clash) { orgId = candidate; break; }
     }
-    if (!teamId) return err(res, "Could not generate team ID. Try again.", 500);
+    if (!orgId) return err(res, "Could not generate Org ID. Try again.", 500);
 
     const company = await Company.create({
-      name: companyName.trim(),
-      teamId,
-      adminEmail: adminEmail.toLowerCase(),
+      name:          orgName.trim(),
+      teamId:        orgId,
+      adminEmail:    email.toLowerCase(),
       adminPassword: hashed,
-      city,
-      state,
+      adminName:     adminName.trim(),
+      phone,
+      city:          city.trim(),
+      orgSize,
+      setupComplete: false,
     });
 
-    // Create default General department
     await Department.create({ company: company._id, name: "General" });
 
     const token = signToken({
@@ -234,18 +250,59 @@ export async function adminRegister(req, res) {
       kind:      "admin",
     });
 
-    return res.status(201).json({
-      ok: true,
-      token,
-      company: {
-        id:     company._id,
-        name:   company.name,
-        teamId: company.teamId,
-      },
-    });
+    return res.status(201).json({ ok: true, orgId, token });
   } catch (e) {
     console.error(e);
     if (e.code === 11000) return err(res, "Account already exists.", 409);
+    err(res, e.message);
+  }
+}
+
+// PATCH /api/auth/admin/setup
+export async function adminSetup(req, res) {
+  try {
+    const { industry, workDays, workStartTime, workEndTime, timezone, referralSource } = req.body;
+
+    if (!industry || !workDays || !workStartTime || !workEndTime || !timezone || !referralSource)
+      return err(res, "All setup fields are required", 400);
+    if (!Array.isArray(workDays) || workDays.length === 0)
+      return err(res, "At least one work day must be selected", 400);
+    if (workEndTime <= workStartTime)
+      return err(res, "Work end time must be after start time", 400);
+
+    await Company.findByIdAndUpdate(req.auth.companyId, {
+      industry,
+      workDays,
+      workStartTime,
+      workEndTime,
+      timezone,
+      referralSource,
+      setupComplete: true,
+    });
+
+    return res.json({ ok: true, success: true });
+  } catch (e) {
+    console.error(e);
+    err(res, e.message);
+  }
+}
+
+// GET /api/auth/admin/profile
+export async function adminProfile(req, res) {
+  try {
+    const company = await Company.findById(req.auth.companyId)
+      .select("name teamId adminName setupComplete");
+    if (!company) return err(res, "Company not found", 404);
+
+    return res.json({
+      ok:           true,
+      setupComplete: company.setupComplete ?? false,
+      orgId:        company.teamId,
+      orgName:      company.name,
+      adminName:    company.adminName,
+    });
+  } catch (e) {
+    console.error(e);
     err(res, e.message);
   }
 }

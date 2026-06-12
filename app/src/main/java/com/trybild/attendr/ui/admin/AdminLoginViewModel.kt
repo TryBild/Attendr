@@ -11,7 +11,7 @@ import kotlinx.coroutines.launch
 sealed class AdminLoginState {
     object Idle : AdminLoginState()
     object Loading : AdminLoginState()
-    data class Success(val companyName: String) : AdminLoginState()
+    data class Success(val companyName: String, val setupComplete: Boolean) : AdminLoginState()
     data class Error(val message: String) : AdminLoginState()
 }
 
@@ -24,12 +24,21 @@ class AdminLoginViewModel(app: Application) : AndroidViewModel(app) {
     fun login(email: String, password: String) {
         viewModelScope.launch {
             _state.value = AdminLoginState.Loading
-            val result = repo.adminLogin(email, password)
-            _state.value = if (result.isSuccess) {
-                AdminLoginState.Success(result.getOrNull()?.company?.name ?: "Admin")
-            } else {
-                AdminLoginState.Error(result.exceptionOrNull()?.message ?: "Login failed")
+            val loginResult = repo.adminLogin(email, password)
+            if (loginResult.isFailure) {
+                _state.value = AdminLoginState.Error(
+                    loginResult.exceptionOrNull()?.message ?: "Login failed"
+                )
+                return@launch
             }
+            val companyName = loginResult.getOrNull()?.company?.name ?: "Admin"
+            val profileResult = repo.adminProfile()
+            val setupComplete = if (profileResult.isSuccess) {
+                profileResult.getOrNull()?.setupComplete ?: false
+            } else {
+                loginResult.getOrNull()?.company?.setupComplete ?: false
+            }
+            _state.value = AdminLoginState.Success(companyName, setupComplete)
         }
     }
 
