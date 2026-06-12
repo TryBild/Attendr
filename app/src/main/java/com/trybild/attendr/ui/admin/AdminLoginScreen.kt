@@ -10,10 +10,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -39,7 +43,8 @@ fun AdminLoginScreen(navController: NavController) {
     LaunchedEffect(state) {
         when (val s = state) {
             is AdminLoginState.Success -> {
-                navController.navigate("admin_home") {
+                val dest = if (s.setupComplete) "admin_home" else "admin_setup"
+                navController.navigate(dest) {
                     popUpTo("welcome") { inclusive = true }
                 }
             }
@@ -131,6 +136,21 @@ fun AdminLoginScreen(navController: NavController) {
                     onClick = { vm.login(email.trim(), password) },
                     enabled = email.isNotBlank() && password.isNotBlank() && !isLoading
                 )
+
+                Spacer(Modifier.height(16.dp))
+
+                TextButton(onClick = { navController.navigate("admin_register") }) {
+                    Text(
+                        buildAnnotatedString {
+                            withStyle(SpanStyle(color = AttendrTextSecondary)) {
+                                append("Don't have an account? ")
+                            }
+                            withStyle(SpanStyle(color = AttendrNavy, fontWeight = FontWeight.SemiBold)) {
+                                append("Register")
+                            }
+                        }
+                    )
+                }
             }
         }
 
