@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import { Company, Department, Employee } from "../models/index.js";
+import { Company, Department, Employee, Geofence } from "../models/index.js";
 import { sendOTP } from "../services/otpService.js";
 import { signToken } from "../middleware/auth.js";
 import { err } from "../utils/response.js";
@@ -203,16 +203,17 @@ function generateOrgId() {
 // POST /api/auth/admin/register
 export async function adminRegister(req, res) {
   try {
-    const { orgName, adminName, email, phone, city, orgSize, password } = req.body;
+    // Accept both field-name conventions
+    const companyName = (req.body.companyName || req.body.orgName || "").trim();
+    const email       = (req.body.adminEmail  || req.body.email   || "").trim();
+    const { password, city, state, adminName, phone, orgSize } = req.body;
 
-    if (!orgName || !adminName || !email || !phone || !city || !orgSize || !password)
-      return err(res, "All fields are required", 400);
-    if (orgName.trim().length < 2)
+    if (!companyName || !email || !password)
+      return err(res, "companyName, email, and password are required", 400);
+    if (companyName.length < 2)
       return err(res, "Organization name must be at least 2 characters", 400);
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
       return err(res, "Invalid email format", 400);
-    if (!/^\d{10}$/.test(phone))
-      return err(res, "Phone must be exactly 10 digits", 400);
     if (password.length < 8)
       return err(res, "Password must be at least 8 characters", 400);
 
@@ -230,14 +231,15 @@ export async function adminRegister(req, res) {
     if (!orgId) return err(res, "Could not generate Org ID. Try again.", 500);
 
     const company = await Company.create({
-      name:          orgName.trim(),
+      name:          companyName,
       teamId:        orgId,
       adminEmail:    email.toLowerCase(),
       adminPassword: hashed,
-      adminName:     adminName.trim(),
-      phone,
-      city:          city.trim(),
-      orgSize,
+      adminName:     adminName?.trim(),
+      phone:         phone,
+      city:          city?.trim() || "N/A",
+      state:         state,
+      orgSize:       orgSize,
       setupComplete: false,
     });
 
@@ -250,7 +252,11 @@ export async function adminRegister(req, res) {
       kind:      "admin",
     });
 
-    return res.status(201).json({ ok: true, orgId, token });
+    return res.status(201).json({
+      ok: true,
+      token,
+      company: { id: company._id, name: company.name, teamId: company.teamId },
+    });
   } catch (e) {
     console.error(e);
     if (e.code === 11000) { console.error("11000 key:", JSON.stringify(e.keyValue)); return err(res, "Account already exists: " + JSON.stringify(e.keyValue), 409); }
@@ -261,24 +267,35 @@ export async function adminRegister(req, res) {
 // PATCH /api/auth/admin/setup
 export async function adminSetup(req, res) {
   try {
-    const { industry, workDays, workStartTime, workEndTime, timezone, referralSource } = req.body;
+    const { workDays, workStartTime, workEndTime, geofence, industry, timezone, referralSource } = req.body;
 
-    if (!industry || !workDays || !workStartTime || !workEndTime || !timezone || !referralSource)
-      return err(res, "All setup fields are required", 400);
     if (!Array.isArray(workDays) || workDays.length === 0)
       return err(res, "At least one work day must be selected", 400);
+    if (!workStartTime || !workEndTime)
+      return err(res, "workStartTime and workEndTime are required", 400);
     if (workEndTime <= workStartTime)
       return err(res, "Work end time must be after start time", 400);
 
     await Company.findByIdAndUpdate(req.auth.companyId, {
-      industry,
       workDays,
       workStartTime,
       workEndTime,
-      timezone,
-      referralSource,
+      ...(industry      && { industry }),
+      ...(timezone      && { timezone }),
+      ...(referralSource && { referralSource }),
       setupComplete: true,
     });
+
+    if (geofence && geofence.latitude != null && geofence.longitude != null) {
+      await Geofence.create({
+        company:      req.auth.companyId,
+        name:         (geofence.name || "Main Office").trim(),
+        latitude:     Number(geofence.latitude),
+        longitude:    Number(geofence.longitude),
+        radiusMeters: Number(geofence.radiusMeters) || 100,
+        address:      geofence.address?.trim(),
+      });
+    }
 
     return res.json({ ok: true, success: true });
   } catch (e) {

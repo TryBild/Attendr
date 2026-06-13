@@ -1,7 +1,7 @@
 import { useAuthStore } from "../store/auth";
 
 export function useAuth() {
-  const { token, kind, companyId, employee, admin, setEmployee, setAdmin, clear } = useAuthStore();
+  const { token, kind, companyId, employee, admin, setEmployee, setAdmin, markSetupComplete, clear } = useAuthStore();
   return {
     token,
     kind,
@@ -13,6 +13,7 @@ export function useAuth() {
     isEmployee:      kind === "employee",
     setEmployee,
     setAdmin,
+    markSetupComplete,
     logout: clear,
   };
 }

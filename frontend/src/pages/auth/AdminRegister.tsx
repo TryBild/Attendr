@@ -1,4 +1,4 @@
-import { useState } from "react";
+git pull origin mainimport { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Eye, EyeOff, Copy, Check } from "lucide-react";
 import AttendrLogo from "../../assets/attendr-logo.png";
@@ -57,10 +57,11 @@ export default function AdminRegister() {
       });
       setTeamId(res.company.teamId);
       setAdmin(res.token, res.company.id, {
-        id:     res.company.id,
-        name:   res.company.name,
-        teamId: res.company.teamId,
-        plan:   "free",
+        id:            res.company.id,
+        name:          res.company.name,
+        teamId:        res.company.teamId,
+        plan:          "free",
+        setupComplete: false,
       });
     } catch (err: any) {
       toast.error(err.message || "Registration failed");
@@ -101,10 +102,10 @@ export default function AdminRegister() {
           </div>
 
           <button
-            onClick={() => navigate("/admin/dashboard", { replace: true })}
+            onClick={() => navigate("/admin/setup", { replace: true })}
             className="w-full bg-blue-900 text-white py-3 rounded-full font-bold hover:bg-blue-800 transition"
           >
-            Go to Dashboard
+            Set Up Your Office
           </button>
         </div>
       </div>
