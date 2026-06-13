@@ -19,6 +19,8 @@ import Employees      from "./pages/admin/Employees";
 import Departments    from "./pages/admin/Departments";
 import Geofences      from "./pages/admin/Geofences";
 import MonthReport    from "./pages/admin/MonthReport";
+import Calendar       from "./pages/admin/Calendar";
+import AdminProfile   from "./pages/admin/AdminProfile";
 
 import HelpCenter     from "./pages/help/HelpCenter";
 import HelpArticle    from "./pages/help/HelpArticle";
@@ -67,17 +69,31 @@ export const router = createBrowserRouter([
     path: "/admin/setup",
     element: <ProtectedRoute kind="admin"><AdminSetupRoute /></ProtectedRoute>,
   },
+  // Tab-level pages (AdminLayout is embedded in each component)
   {
     path: "/admin/dashboard",
     element: <ProtectedRoute kind="admin"><AdminDashboardRoute /></ProtectedRoute>,
   },
   {
-    path: "/admin/day-register",
-    element: <ProtectedRoute kind="admin"><DayRegister /></ProtectedRoute>,
-  },
-  {
     path: "/admin/employees",
     element: <ProtectedRoute kind="admin"><Employees /></ProtectedRoute>,
+  },
+  {
+    path: "/admin/calendar",
+    element: <ProtectedRoute kind="admin"><Calendar /></ProtectedRoute>,
+  },
+  {
+    path: "/admin/reports",
+    element: <ProtectedRoute kind="admin"><MonthReport /></ProtectedRoute>,
+  },
+  {
+    path: "/admin/profile",
+    element: <ProtectedRoute kind="admin"><AdminProfile /></ProtectedRoute>,
+  },
+  // Sub-pages (no bottom nav)
+  {
+    path: "/admin/day-register",
+    element: <ProtectedRoute kind="admin"><DayRegister /></ProtectedRoute>,
   },
   {
     path: "/admin/departments",
@@ -86,10 +102,6 @@ export const router = createBrowserRouter([
   {
     path: "/admin/geofences",
     element: <ProtectedRoute kind="admin"><Geofences /></ProtectedRoute>,
-  },
-  {
-    path: "/admin/reports",
-    element: <ProtectedRoute kind="admin"><MonthReport /></ProtectedRoute>,
   },
 
   // Help routes (public)
