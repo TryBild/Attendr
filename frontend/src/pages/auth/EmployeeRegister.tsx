@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Check, ArrowLeft } from "lucide-react";
-import AttendrLogo from "../../assets/attendr-logo.png";
 import toast from "react-hot-toast";
 import { requestOtp } from "../../api/auth";
 

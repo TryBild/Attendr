@@ -14,14 +14,6 @@ const STATUS_COLOR: Record<string, string> = {
   not_marked:"bg-gray-50 text-gray-400",
 };
 
-const STATUS_DOT: Record<string, string> = {
-  present: "bg-green-500",
-  late:    "bg-orange-500",
-  absent:  "bg-red-500",
-  leave:   "bg-blue-500",
-  holiday: "bg-gray-400",
-};
-
 export default function MyAttendance() {
   const [month, setMonth] = useState(currentMonthIST());
 
