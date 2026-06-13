@@ -1,0 +1,50 @@
+services:
+  # ── Backend API ────────────────────────────────────────────────────────────
+  - type: web
+    name: attendr-api
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: OTP_EXPIRY_MINUTES
+        value: 10
+      # Set these in the Render dashboard (mark as secret):
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: FAST2SMS_API_KEY
+        sync: false
+      # Allow requests from the frontend static site
+      - key: ALLOWED_ORIGIN
+        fromService:
+          type: web
+          name: attendr-frontend
+          property: url
+
+  # ── Frontend Static Site ───────────────────────────────────────────────────
+  - type: web
+    name: attendr-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      # Points the API client at the backend service (injected at build time)
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: attendr-api
+          property: url
+    routes:
+      # SPA fallback — all paths serve index.html
+      - type: rewrite
+        source: /*
+        destination: /index.html
