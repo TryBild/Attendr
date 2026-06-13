@@ -30,15 +30,16 @@ export default function AdminLogin() {
     try {
       const res = await adminLogin(email.trim(), password);
       setAdmin(res.token, res.company.id, {
-        id:    res.company.id,
-        name:  res.company.name,
-        teamId:res.company.teamId,
-        plan:  res.company.plan,
-        city:  res.company.city,
-        state: res.company.state,
+        id:            res.company.id,
+        name:          res.company.name,
+        teamId:        res.company.teamId,
+        plan:          res.company.plan,
+        city:          res.company.city,
+        state:         res.company.state,
+        setupComplete: res.company.setupComplete,
       });
       toast.success(`Welcome back, ${res.company.name}!`);
-      navigate("/admin/dashboard", { replace: true });
+      navigate(res.company.setupComplete ? "/admin/dashboard" : "/admin/setup", { replace: true });
     } catch (err: any) {
       toast.error(err.message || "Login failed");
     } finally {

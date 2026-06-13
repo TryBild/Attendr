@@ -13,17 +13,34 @@ import MyAttendance   from "./pages/employee/MyAttendance";
 import Profile        from "./pages/employee/Profile";
 
 import Dashboard      from "./pages/admin/Dashboard";
+import OrgSetup       from "./pages/admin/OrgSetup";
 import DayRegister    from "./pages/admin/DayRegister";
 import Employees      from "./pages/admin/Employees";
 import Departments    from "./pages/admin/Departments";
 import Geofences      from "./pages/admin/Geofences";
 import MonthReport    from "./pages/admin/MonthReport";
+import Calendar       from "./pages/admin/Calendar";
+import AdminProfile   from "./pages/admin/AdminProfile";
 
 import HelpCenter     from "./pages/help/HelpCenter";
 import HelpArticle    from "./pages/help/HelpArticle";
 import ContactSupport from "./pages/help/ContactSupport";
 
 import { ProtectedRoute } from "./components/ProtectedRoute";
+
+// Wraps Dashboard: redirects to /admin/setup when setup is not yet complete
+function AdminDashboardRoute() {
+  const { admin } = useAuth();
+  if (!admin?.setupComplete) return <Navigate to="/admin/setup" replace />;
+  return <Dashboard />;
+}
+
+// Wraps OrgSetup: redirects to /admin/dashboard once setup is done
+function AdminSetupRoute() {
+  const { admin } = useAuth();
+  if (admin?.setupComplete) return <Navigate to="/admin/dashboard" replace />;
+  return <OrgSetup />;
+}
 
 export const router = createBrowserRouter([
   { path: "/",               element: <Welcome /> },
@@ -49,16 +66,34 @@ export const router = createBrowserRouter([
 
   // Admin routes
   {
-    path: "/admin/dashboard",
-    element: <ProtectedRoute kind="admin"><Dashboard /></ProtectedRoute>,
+    path: "/admin/setup",
+    element: <ProtectedRoute kind="admin"><AdminSetupRoute /></ProtectedRoute>,
   },
+  // Tab-level pages (AdminLayout is embedded in each component)
   {
-    path: "/admin/day-register",
-    element: <ProtectedRoute kind="admin"><DayRegister /></ProtectedRoute>,
+    path: "/admin/dashboard",
+    element: <ProtectedRoute kind="admin"><AdminDashboardRoute /></ProtectedRoute>,
   },
   {
     path: "/admin/employees",
     element: <ProtectedRoute kind="admin"><Employees /></ProtectedRoute>,
+  },
+  {
+    path: "/admin/calendar",
+    element: <ProtectedRoute kind="admin"><Calendar /></ProtectedRoute>,
+  },
+  {
+    path: "/admin/reports",
+    element: <ProtectedRoute kind="admin"><MonthReport /></ProtectedRoute>,
+  },
+  {
+    path: "/admin/profile",
+    element: <ProtectedRoute kind="admin"><AdminProfile /></ProtectedRoute>,
+  },
+  // Sub-pages (no bottom nav)
+  {
+    path: "/admin/day-register",
+    element: <ProtectedRoute kind="admin"><DayRegister /></ProtectedRoute>,
   },
   {
     path: "/admin/departments",
@@ -67,10 +102,6 @@ export const router = createBrowserRouter([
   {
     path: "/admin/geofences",
     element: <ProtectedRoute kind="admin"><Geofences /></ProtectedRoute>,
-  },
-  {
-    path: "/admin/reports",
-    element: <ProtectedRoute kind="admin"><MonthReport /></ProtectedRoute>,
   },
 
   // Help routes (public)

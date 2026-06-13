@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Download, ChevronLeft, ChevronRight } from "lucide-react";
+import { Download, ChevronLeft, ChevronRight } from "lucide-react";
 import { getMonthReport, downloadMonthCsv } from "../../api/reports";
 import { currentMonthIST } from "../../lib/utils";
+import { AdminLayout } from "../../components/AdminLayout";
 import toast from "react-hot-toast";
 
 const CELL_COLOR: Record<string, string> = {
@@ -46,10 +46,10 @@ export default function MonthReport() {
   const dayNums = Array.from({ length: days }, (_, i) => i + 1);
 
   return (
-    <div className="min-h-screen bg-gray-50 max-w-5xl mx-auto pb-8">
+    <AdminLayout>
+    <div className="min-h-screen bg-gray-50 max-w-5xl mx-auto pb-24">
       <div className="bg-white px-5 pt-12 pb-4 shadow-sm">
         <div className="flex items-center gap-3 mb-4">
-          <Link to="/admin/dashboard" className="text-gray-500"><ArrowLeft size={20} /></Link>
           <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "Nunito, sans-serif" }}>Month Report</h1>
           <button onClick={handleDownload} className="ml-auto flex items-center gap-1 bg-blue-900 text-white px-4 py-2 rounded-full text-sm font-semibold">
             <Download size={15} />Download CSV
@@ -109,5 +109,6 @@ export default function MonthReport() {
         )}
       </div>
     </div>
+    </AdminLayout>
   );
 }
