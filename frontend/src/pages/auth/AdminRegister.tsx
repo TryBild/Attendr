@@ -1,4 +1,4 @@
-git pull origin mainimport { useState } from "react";
+import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Eye, EyeOff, Copy, Check } from "lucide-react";
 import AttendrLogo from "../../assets/attendr-logo.png";
