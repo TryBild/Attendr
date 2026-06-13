@@ -15,7 +15,8 @@ export async function request<T>(
 ): Promise<T> {
   const token = useAuthStore.getState().token;
 
-  const res = await fetch(`/api${path}`, {
+  const base = (import.meta.env.VITE_API_URL as string | undefined) ?? "";
+  const res = await fetch(`${base}/api${path}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",
