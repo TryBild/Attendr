@@ -63,7 +63,6 @@ export default function ClockInOut() {
 
   const isCheckedIn  = today?.checkInTime && !today?.checkOutTime;
   const isCheckedOut = today?.checkInTime && today?.checkOutTime;
-  const notMarked    = !today?.checkInTime;
 
   const geoColor = geo.status === "ready" ? "text-green-500" : geo.status === "loading" ? "text-yellow-500" : "text-red-500";
   const geoText  = geo.status === "ready" ? "Location detected" : geo.status === "loading" ? "Detecting location..." : geo.status === "denied" ? "Location access denied" : "Unable to get location";
