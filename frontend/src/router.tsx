@@ -13,6 +13,7 @@ import MyAttendance   from "./pages/employee/MyAttendance";
 import Profile        from "./pages/employee/Profile";
 
 import Dashboard      from "./pages/admin/Dashboard";
+import OrgSetup       from "./pages/admin/OrgSetup";
 import DayRegister    from "./pages/admin/DayRegister";
 import Employees      from "./pages/admin/Employees";
 import Departments    from "./pages/admin/Departments";
@@ -24,6 +25,20 @@ import HelpArticle    from "./pages/help/HelpArticle";
 import ContactSupport from "./pages/help/ContactSupport";
 
 import { ProtectedRoute } from "./components/ProtectedRoute";
+
+// Wraps Dashboard: redirects to /admin/setup when setup is not yet complete
+function AdminDashboardRoute() {
+  const { admin } = useAuth();
+  if (!admin?.setupComplete) return <Navigate to="/admin/setup" replace />;
+  return <Dashboard />;
+}
+
+// Wraps OrgSetup: redirects to /admin/dashboard once setup is done
+function AdminSetupRoute() {
+  const { admin } = useAuth();
+  if (admin?.setupComplete) return <Navigate to="/admin/dashboard" replace />;
+  return <OrgSetup />;
+}
 
 export const router = createBrowserRouter([
   { path: "/",               element: <Welcome /> },
@@ -49,8 +64,12 @@ export const router = createBrowserRouter([
 
   // Admin routes
   {
+    path: "/admin/setup",
+    element: <ProtectedRoute kind="admin"><AdminSetupRoute /></ProtectedRoute>,
+  },
+  {
     path: "/admin/dashboard",
-    element: <ProtectedRoute kind="admin"><Dashboard /></ProtectedRoute>,
+    element: <ProtectedRoute kind="admin"><AdminDashboardRoute /></ProtectedRoute>,
   },
   {
     path: "/admin/day-register",
