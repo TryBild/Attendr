@@ -253,7 +253,7 @@ export async function adminRegister(req, res) {
     return res.status(201).json({ ok: true, orgId, token });
   } catch (e) {
     console.error(e);
-    if (e.code === 11000) return err(res, "Account already exists.", 409);
+    if (e.code === 11000) { console.error("11000 key:", JSON.stringify(e.keyValue)); return err(res, "Account already exists: " + JSON.stringify(e.keyValue), 409); }
     err(res, e.message);
   }
 }
