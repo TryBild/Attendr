@@ -31,6 +31,9 @@ export const adminRegister = (data: {
     body: JSON.stringify(data),
   });
 
+export const adminProfile = () =>
+  request<{ ok: true; setupComplete: boolean; orgId: string; orgName: string; adminName: string }>("/auth/admin/profile");
+
 export const adminSetup = (data: {
   workDays: string[];
   workStartTime: string;

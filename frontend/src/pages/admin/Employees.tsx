@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, UserPlus, MoreVertical, X } from "lucide-react";
+import { UserPlus, MoreVertical, X } from "lucide-react";
 import { getEmployees, addEmployee, updateEmployee, deactivateEmployee, getDepartments } from "../../api/admin";
 import { getInitials } from "../../lib/utils";
+import { AdminLayout } from "../../components/AdminLayout";
 import toast from "react-hot-toast";
 
 interface EmpForm { fullName: string; mobile: string; departmentId: string; employeeCode: string; designation: string; }
@@ -59,10 +59,10 @@ export default function Employees() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 max-w-2xl mx-auto pb-8">
+    <AdminLayout>
+    <div className="min-h-screen bg-gray-50 max-w-2xl mx-auto pb-24">
       <div className="bg-white px-5 pt-12 pb-4 shadow-sm">
         <div className="flex items-center gap-3">
-          <Link to="/admin/dashboard" className="text-gray-500"><ArrowLeft size={20} /></Link>
           <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "Nunito, sans-serif" }}>Employees</h1>
           <button onClick={openAdd} className="ml-auto flex items-center gap-1 bg-blue-900 text-white px-4 py-2 rounded-full text-sm font-semibold">
             <UserPlus size={15} />Add
@@ -143,5 +143,6 @@ export default function Employees() {
         </div>
       )}
     </div>
+    </AdminLayout>
   );
 }
