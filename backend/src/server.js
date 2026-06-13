@@ -41,6 +41,6 @@ app.use("/api/support",    supportRoutes);
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 4000;
-connectDB(process.env.MONGO_URI).then(() =>
+connectDB(process.env.MONGO_URI || process.env.MONGODB_URI).then(() =>
   app.listen(PORT, () => console.log(`✓ Attendr API running on :${PORT}`))
 );
