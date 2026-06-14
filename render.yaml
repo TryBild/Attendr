@@ -25,14 +25,13 @@ services:
       # Allow requests from the frontend static site
       - key: ALLOWED_ORIGIN
         fromService:
-          type: web
+          type: static
           name: attendr-frontend
           property: url
 
   # ── Frontend Static Site ───────────────────────────────────────────────────
-  - type: web
+  - type: static
     name: attendr-frontend
-    runtime: static
     rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: dist
