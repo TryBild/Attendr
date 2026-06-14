@@ -118,7 +118,7 @@ fun AppNav() {
         }
 
         composable("admin_home") {
-            AdminHomeScreen()
+            AdminHomeScreen(navController = navController)
         }
 
         composable("help") {
