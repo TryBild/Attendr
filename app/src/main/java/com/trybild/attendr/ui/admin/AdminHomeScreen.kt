@@ -45,29 +45,6 @@ private val AmberChipBg = Color(0xFFFFF3E0)
 fun AdminHomeScreen(navController: NavController) {
     val vm: AdminDashboardViewModel = viewModel()
     val state by vm.state.collectAsStateWithLifecycle()
-    var showLogoutDialog by remember { mutableStateOf(false) }
-    var avatarMenuExpanded by remember { mutableStateOf(false) }
-
-    if (showLogoutDialog) {
-        AlertDialog(
-            onDismissRequest = { showLogoutDialog = false },
-            title = { Text("Log Out") },
-            text = { Text("Are you sure you want to log out?") },
-            confirmButton = {
-                TextButton(onClick = {
-                    showLogoutDialog = false
-                    vm.logout {
-                        navController.navigate("welcome") {
-                            popUpTo(0) { inclusive = true }
-                        }
-                    }
-                }) { Text("Log Out", color = AttendrError) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showLogoutDialog = false }) { Text("Cancel") }
-            }
-        )
-    }
 
     Scaffold(containerColor = AttendrBackground) { innerPadding ->
         Column(
@@ -103,37 +80,20 @@ fun AdminHomeScreen(navController: NavController) {
                         tint = AttendrTextSecondary
                     )
                 }
-                Box {
-                    val initials = nameInitials(state.adminName)
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(AttendrNavy)
-                            .clickable { avatarMenuExpanded = true },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            initials.ifEmpty { "A" },
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                            color = Color.White
-                        )
-                    }
-                    DropdownMenu(
-                        expanded = avatarMenuExpanded,
-                        onDismissRequest = { avatarMenuExpanded = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Log Out", color = AttendrError) },
-                            onClick = {
-                                avatarMenuExpanded = false
-                                showLogoutDialog = true
-                            },
-                            leadingIcon = {
-                                Icon(Icons.Default.Logout, contentDescription = null, tint = AttendrError)
-                            }
-                        )
-                    }
+                val initials = nameInitials(state.adminName)
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(AttendrNavy)
+                        .clickable { navController.navigate("admin_profile") },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        initials.ifEmpty { "A" },
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        color = Color.White
+                    )
                 }
             }
 

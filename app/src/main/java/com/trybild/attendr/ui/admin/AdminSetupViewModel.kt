@@ -31,7 +31,14 @@ class AdminSetupViewModel(app: Application) : AndroidViewModel(app) {
     ) {
         viewModelScope.launch {
             _state.value = AdminSetupState.Loading
-            val result = repo.adminSetup(industry, workDays, workStartTime, workEndTime, timezone, referralSource)
+            val result = repo.adminSetup(
+                workDays = workDays,
+                workStartTime = workStartTime,
+                workEndTime = workEndTime,
+                industry = industry,
+                timezone = timezone,
+                referralSource = referralSource
+            )
             _state.value = if (result.isSuccess) {
                 AdminSetupState.Success
             } else {

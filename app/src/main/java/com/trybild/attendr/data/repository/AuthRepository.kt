@@ -89,16 +89,25 @@ class AuthRepository(context: Context) {
     }
 
     suspend fun adminSetup(
-        industry: String, workDays: List<String>,
+        workDays: List<String>,
         workStartTime: String, workEndTime: String,
-        timezone: String, referralSource: String
+        industry: String? = null, timezone: String? = null,
+        referralSource: String? = null, adminName: String? = null
     ): Result<AdminSetupResponse> {
         return try {
             val token = dataStore.token.firstOrNull()
                 ?: return Result.failure(Exception("Not logged in"))
             val res = api.adminSetup(
                 "Bearer $token",
-                AdminSetupRequest(industry, workDays, workStartTime, workEndTime, timezone, referralSource)
+                AdminSetupRequest(
+                    workDays = workDays,
+                    workStartTime = workStartTime,
+                    workEndTime = workEndTime,
+                    industry = industry,
+                    timezone = timezone,
+                    referralSource = referralSource,
+                    adminName = adminName
+                )
             )
             if (res.isSuccessful && res.body()?.ok == true) {
                 dataStore.saveSetupComplete(true)
