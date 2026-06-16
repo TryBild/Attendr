@@ -18,16 +18,41 @@ function formatTime12(date) {
 
 // ─── DASHBOARD ──────────────────────────────────────────────────────────────
 
+function checkinStatus(checkInTime, startHour, startMinute) {
+  if (!checkInTime || startHour === null) return null;
+  const timeStr = new Date(checkInTime).toLocaleTimeString("en-US", {
+    timeZone: "Asia/Kolkata",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  const [h, m] = timeStr.split(":").map(Number);
+  return h * 60 + m > startHour * 60 + startMinute ? "late" : "on_time";
+}
+
 // GET /api/admin/dashboard
 export async function getDashboard(req, res) {
   try {
     const companyId = req.auth.companyId;
     const date = todayIST();
 
+    // Fetch workStartTime once — format is "HH:mm" (24-hour)
+    const company = await Company.findById(companyId, "workStartTime");
+    let startHour = null, startMinute = null;
+    if (company?.workStartTime) {
+      const parts = company.workStartTime.split(":").map(Number);
+      startHour   = parts[0] ?? null;
+      startMinute = parts[1] ?? 0;
+    }
+
     const totalEmployees = await Employee.countDocuments({ company: companyId, isActive: true });
 
     const todayRecords = await Attendance.find({ company: companyId, date })
-      .populate("employee", "fullName department")
+      .populate({
+        path: "employee",
+        select: "fullName department",
+        populate: { path: "department", select: "name" },
+      })
       .sort({ checkInTime: -1 });
 
     const present = todayRecords.filter((r) => r.status === "present" || r.status === "late").length;
@@ -35,11 +60,16 @@ export async function getDashboard(req, res) {
     const absent  = totalEmployees - present;
     const attendancePercent = totalEmployees > 0 ? Math.round((present / totalEmployees) * 100) : 0;
 
-    const recentActivity = todayRecords.slice(0, 10).map((r) => ({
-      employeeName: r.employee?.fullName || "Unknown",
-      action:       r.checkOutTime ? "checkout" : "checkin",
-      time:         formatTime12(r.checkOutTime || r.checkInTime),
-    }));
+    const recentActivity = todayRecords.slice(0, 10).map((r) => {
+      const action = r.checkOutTime ? "checkout" : "checkin";
+      return {
+        employeeName: r.employee?.fullName || "Unknown",
+        department:   r.employee?.department?.name || null,
+        action,
+        status: action === "checkin" ? checkinStatus(r.checkInTime, startHour, startMinute) : null,
+        time:   formatTime12(r.checkOutTime || r.checkInTime),
+      };
+    });
 
     // This month avg
     const now = new Date();

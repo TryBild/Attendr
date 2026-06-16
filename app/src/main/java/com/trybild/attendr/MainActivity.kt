@@ -13,10 +13,12 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.trybild.attendr.data.local.TokenDataStore
+import com.trybild.attendr.ui.admin.AdminEmployeesScreen
 import com.trybild.attendr.ui.admin.AdminHomeScreen
 import com.trybild.attendr.ui.admin.AdminLoginScreen
 import com.trybild.attendr.ui.admin.AdminRegisterScreen
 import com.trybild.attendr.ui.admin.AdminSetupScreen
+import com.trybild.attendr.ui.admin.AttendanceCalendarScreen
 import com.trybild.attendr.ui.help.ArticleScreen
 import com.trybild.attendr.ui.help.HelpCenterScreen
 import com.trybild.attendr.ui.home.HomeScreen
@@ -119,6 +121,14 @@ fun AppNav() {
 
         composable("admin_home") {
             AdminHomeScreen(navController = navController)
+        }
+
+        composable("admin_employees") {
+            AdminEmployeesScreen(navController = navController)
+        }
+
+        composable("admin_attendance") {
+            AttendanceCalendarScreen(navController = navController)
         }
 
         composable("help") {

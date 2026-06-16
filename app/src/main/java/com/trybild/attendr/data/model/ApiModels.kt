@@ -48,3 +48,68 @@ data class MarkAttendanceBody(val type: String, val lat: Double?, val lng: Doubl
 data class AttendanceLog(val type: String, val at: String, val mockDetected: Boolean)
 data class TodayLogsResponse(val ok: Boolean, val logs: List<AttendanceLog>?)
 data class AttendanceResponse(val ok: Boolean, val at: String?, val flagged: Boolean?, val error: String?)
+
+// Admin dashboard
+data class DashboardTodayStats(
+    val date: String,
+    val totalEmployees: Int,
+    val present: Int,
+    val absent: Int,
+    val late: Int,
+    val attendancePercent: Int
+)
+data class DashboardMonthStats(val avgAttendance: Int, val totalWorkingDays: Int)
+data class RecentActivityItem(
+    val employeeName: String,
+    val department: String?,
+    val action: String,
+    val status: String?,
+    val time: String?
+)
+data class AdminDashboardResponse(
+    val ok: Boolean,
+    val today: DashboardTodayStats?,
+    val thisMonth: DashboardMonthStats?,
+    val recentActivity: List<RecentActivityItem>?,
+    val error: String?
+)
+
+// Admin employees list (GET /api/admin/employees)
+data class AdminEmployeeDept(val name: String)
+data class AdminEmployeeItem(
+    val id: String,
+    val fullName: String,
+    val mobile: String,
+    val employeeCode: String?,
+    val designation: String?,
+    val department: AdminEmployeeDept?,
+    val isActive: Boolean = true,
+    val isVerified: Boolean = false,
+    val joinedAt: String?
+)
+data class AdminEmployeesResponse(
+    val ok: Boolean,
+    val employees: List<AdminEmployeeItem>?,
+    val error: String?
+)
+
+// Day register (GET /api/admin/attendance/day)
+data class DayRegisterRow(
+    val employeeId: String,
+    val employeeCode: String,
+    val fullName: String,
+    val department: String,
+    val status: String,
+    val checkInTime: String?,
+    val checkOutTime: String?,
+    val workingHours: Double?,
+    val late: Boolean
+)
+data class DayRegisterResponse(
+    val ok: Boolean,
+    val date: String?,
+    val rows: List<DayRegisterRow>?,
+    val present: Int = 0,
+    val total: Int = 0,
+    val error: String?
+)

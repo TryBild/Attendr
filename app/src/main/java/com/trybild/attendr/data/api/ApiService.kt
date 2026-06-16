@@ -38,4 +38,20 @@ interface ApiService {
     suspend fun getTodayLogs(
         @Header("Authorization") token: String
     ): Response<TodayLogsResponse>
+
+    @GET("admin/employees")
+    suspend fun getAdminEmployees(
+        @Header("Authorization") token: String
+    ): Response<AdminEmployeesResponse>
+
+    @GET("admin/dashboard")
+    suspend fun adminDashboard(
+        @Header("Authorization") token: String
+    ): Response<AdminDashboardResponse>
+
+    @GET("admin/attendance/day")
+    suspend fun getDayRegister(
+        @Header("Authorization") token: String,
+        @Query("date") date: String
+    ): Response<DayRegisterResponse>
 }
