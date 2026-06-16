@@ -135,7 +135,7 @@ fun AdminEmployeesScreen(navController: NavController) {
                                     tint = AttendrBorder, modifier = Modifier.size(56.dp))
                                 Spacer(Modifier.height(12.dp))
                                 Text(
-                                    if (state.query.isNotEmpty()) "No results for "${state.query}""
+                                    if (state.query.isNotEmpty()) "No results for \"${state.query}\""
                                     else "No employees yet",
                                     style = MaterialTheme.typography.bodyLarge,
                                     color = AttendrTextSecondary
