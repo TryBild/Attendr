@@ -82,6 +82,13 @@ export async function requestOTP(req, res) {
     });
   } catch (e) {
     console.error(e);
+    // A duplicate-key here means a stale/orphan index (e.g. companyId_1_phone_1)
+    // exists on the employees collection — surface a clear 409 instead of a raw 500.
+    // Fix: run scripts/fix-employee-indexes.js against the affected database.
+    if (e.code === 11000) {
+      console.error("11000 key:", JSON.stringify(e.keyValue));
+      return err(res, "Could not register due to a database conflict. Please try again or contact support.", 409);
+    }
     err(res, e.message);
   }
 }
