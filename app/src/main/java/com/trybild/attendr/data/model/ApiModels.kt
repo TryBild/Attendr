@@ -15,15 +15,18 @@ data class AdminRegisterRequest(
 data class AdminRegisterResponse(val ok: Boolean, val orgId: String?, val token: String?, val error: String?)
 
 data class AdminSetupRequest(
-    val industry: String, val workDays: List<String>,
+    val workDays: List<String>,
     val workStartTime: String, val workEndTime: String,
-    val timezone: String, val referralSource: String
+    val industry: String? = null, val timezone: String? = null,
+    val referralSource: String? = null, val adminName: String? = null
 )
 data class AdminSetupResponse(val ok: Boolean, val success: Boolean?, val error: String?)
 
 data class AdminProfileResponse(
     val ok: Boolean, val setupComplete: Boolean,
     val orgId: String?, val orgName: String?, val adminName: String?,
+    val phone: String?,
+    val workDays: List<String>?, val workStartTime: String?, val workEndTime: String?,
     val error: String?
 )
 

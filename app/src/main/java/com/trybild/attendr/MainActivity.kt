@@ -19,6 +19,7 @@ import com.trybild.attendr.ui.admin.AdminLoginScreen
 import com.trybild.attendr.ui.admin.AdminRegisterScreen
 import com.trybild.attendr.ui.admin.AdminSetupScreen
 import com.trybild.attendr.ui.admin.AttendanceCalendarScreen
+import com.trybild.attendr.ui.admin.ProfileScreen
 import com.trybild.attendr.ui.help.ArticleScreen
 import com.trybild.attendr.ui.help.HelpCenterScreen
 import com.trybild.attendr.ui.home.HomeScreen
@@ -129,6 +130,10 @@ fun AppNav() {
 
         composable("admin_attendance") {
             AttendanceCalendarScreen(navController = navController)
+        }
+
+        composable("admin_profile") {
+            ProfileScreen(navController = navController)
         }
 
         composable("help") {

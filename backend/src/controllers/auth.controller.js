@@ -267,7 +267,7 @@ export async function adminRegister(req, res) {
 // PATCH /api/auth/admin/setup
 export async function adminSetup(req, res) {
   try {
-    const { workDays, workStartTime, workEndTime, geofence, industry, timezone, referralSource } = req.body;
+    const { workDays, workStartTime, workEndTime, geofence, industry, timezone, referralSource, adminName } = req.body;
 
     if (!Array.isArray(workDays) || workDays.length === 0)
       return err(res, "At least one work day must be selected", 400);
@@ -283,6 +283,7 @@ export async function adminSetup(req, res) {
       ...(industry      && { industry }),
       ...(timezone      && { timezone }),
       ...(referralSource && { referralSource }),
+      ...(adminName && adminName.trim() && { adminName: adminName.trim() }),
       setupComplete: true,
     });
 
@@ -308,15 +309,19 @@ export async function adminSetup(req, res) {
 export async function adminProfile(req, res) {
   try {
     const company = await Company.findById(req.auth.companyId)
-      .select("name teamId adminName setupComplete");
+      .select("name teamId adminName phone setupComplete workDays workStartTime workEndTime");
     if (!company) return err(res, "Company not found", 404);
 
     return res.json({
-      ok:           true,
+      ok:            true,
       setupComplete: company.setupComplete ?? false,
-      orgId:        company.teamId,
-      orgName:      company.name,
-      adminName:    company.adminName,
+      orgId:         company.teamId,
+      orgName:       company.name,
+      adminName:     company.adminName,
+      phone:         company.phone,
+      workDays:      company.workDays ?? [],
+      workStartTime: company.workStartTime,
+      workEndTime:   company.workEndTime,
     });
   } catch (e) {
     console.error(e);
