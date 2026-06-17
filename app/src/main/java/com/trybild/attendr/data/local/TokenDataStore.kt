@@ -19,6 +19,7 @@ class TokenDataStore(private val context: Context) {
     private val COMPANY_NAME = stringPreferencesKey(Constants.COMPANY_NAME_KEY)
     private val SETUP_COMPLETE = stringPreferencesKey(Constants.SETUP_COMPLETE_KEY)
     private val ORG_ID = stringPreferencesKey(Constants.ORG_ID_KEY)
+    private val EMPLOYEE_NAME = stringPreferencesKey("employee_name")
 
     val token: Flow<String?> = context.dataStore.data.map { it[TOKEN] }
     val deviceId: Flow<String?> = context.dataStore.data.map { it[DEVICE_ID] }
@@ -26,6 +27,7 @@ class TokenDataStore(private val context: Context) {
     val companyName: Flow<String?> = context.dataStore.data.map { it[COMPANY_NAME] }
     val setupComplete: Flow<Boolean> = context.dataStore.data.map { it[SETUP_COMPLETE] == "true" }
     val orgId: Flow<String?> = context.dataStore.data.map { it[ORG_ID] }
+    val employeeName: Flow<String?> = context.dataStore.data.map { it[EMPLOYEE_NAME] }
 
     suspend fun saveToken(token: String) { context.dataStore.edit { it[TOKEN] = token } }
     suspend fun saveDeviceId(id: String) { context.dataStore.edit { it[DEVICE_ID] = id } }
@@ -33,6 +35,7 @@ class TokenDataStore(private val context: Context) {
     suspend fun saveCompanyName(name: String) { context.dataStore.edit { it[COMPANY_NAME] = name } }
     suspend fun saveSetupComplete(complete: Boolean) { context.dataStore.edit { it[SETUP_COMPLETE] = complete.toString() } }
     suspend fun saveOrgId(id: String) { context.dataStore.edit { it[ORG_ID] = id } }
+    suspend fun saveEmployeeName(name: String) { context.dataStore.edit { it[EMPLOYEE_NAME] = name } }
     suspend fun clearToken() {
         context.dataStore.edit {
             it.remove(TOKEN)
@@ -40,6 +43,7 @@ class TokenDataStore(private val context: Context) {
             it.remove(COMPANY_NAME)
             it.remove(SETUP_COMPLETE)
             it.remove(ORG_ID)
+            it.remove(EMPLOYEE_NAME)
         }
     }
 }

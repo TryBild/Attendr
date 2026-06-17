@@ -22,7 +22,7 @@ import com.trybild.attendr.ui.admin.AttendanceCalendarScreen
 import com.trybild.attendr.ui.admin.ProfileScreen
 import com.trybild.attendr.ui.help.ArticleScreen
 import com.trybild.attendr.ui.help.HelpCenterScreen
-import com.trybild.attendr.ui.home.HomeScreen
+import com.trybild.attendr.ui.employee.EmployeeShell
 import com.trybild.attendr.ui.legal.DataUsageScreen
 import com.trybild.attendr.ui.legal.PrivacyScreen
 import com.trybild.attendr.ui.legal.TermsScreen
@@ -117,7 +117,7 @@ fun AppNav() {
         }
 
         composable("home") {
-            HomeScreen()
+            EmployeeShell(outerNavController = navController)
         }
 
         composable("admin_home") {

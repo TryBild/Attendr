@@ -51,6 +51,7 @@ class AuthRepository(context: Context) {
                 val body = res.body()!!
                 body.token?.let { dataStore.saveToken(it) }
                 dataStore.saveUserKind("employee")
+                body.employee?.fullName?.let { dataStore.saveEmployeeName(it) }
                 body.employee?.company?.name?.let { dataStore.saveCompanyName(it) }
                 Result.success(body)
             } else {
@@ -160,6 +161,36 @@ class AuthRepository(context: Context) {
                 Result.success(res.body()!!)
             } else {
                 Result.failure(Exception(res.body()?.error ?: "Could not fetch register"))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception(e.message ?: "Network error"))
+        }
+    }
+
+    suspend fun getMyAttendance(month: String): Result<MyAttendanceResponse> {
+        return try {
+            val token = dataStore.token.firstOrNull()
+                ?: return Result.failure(Exception("Not logged in"))
+            val res = api.getMyAttendance("Bearer $token", month)
+            if (res.isSuccessful && res.body()?.ok == true) {
+                Result.success(res.body()!!)
+            } else {
+                Result.failure(Exception(res.body()?.error ?: "Could not fetch attendance"))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception(e.message ?: "Network error"))
+        }
+    }
+
+    suspend fun getGeofences(): Result<GeofencesResponse> {
+        return try {
+            val token = dataStore.token.firstOrNull()
+                ?: return Result.failure(Exception("Not logged in"))
+            val res = api.getGeofences("Bearer $token")
+            if (res.isSuccessful && res.body()?.ok == true) {
+                Result.success(res.body()!!)
+            } else {
+                Result.failure(Exception(res.body()?.error ?: "Could not fetch geofences"))
             }
         } catch (e: Exception) {
             Result.failure(Exception(e.message ?: "Network error"))

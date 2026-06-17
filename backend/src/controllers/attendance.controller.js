@@ -162,6 +162,17 @@ export async function getMyAttendance(req, res) {
   }
 }
 
+// GET /api/attendance/geofences
+export async function getGeofences(req, res) {
+  try {
+    const geofences = await Geofence.find({ company: req.auth.companyId, isActive: true })
+      .select("name latitude longitude radiusMeters");
+    return res.json({ ok: true, geofences });
+  } catch (e) {
+    err(res, e.message);
+  }
+}
+
 function getWeekends(year, month) {
   let count = 0;
   const days = new Date(year, month, 0).getDate();
