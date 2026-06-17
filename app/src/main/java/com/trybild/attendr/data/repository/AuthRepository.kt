@@ -51,6 +51,7 @@ class AuthRepository(context: Context) {
                 val body = res.body()!!
                 body.token?.let { dataStore.saveToken(it) }
                 dataStore.saveUserKind("employee")
+                body.employee?.fullName?.let { dataStore.saveEmployeeName(it) }
                 body.employee?.company?.name?.let { dataStore.saveCompanyName(it) }
                 Result.success(body)
             } else {

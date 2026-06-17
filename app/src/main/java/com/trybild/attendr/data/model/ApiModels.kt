@@ -56,7 +56,8 @@ data class TodayAttendanceResponse(
     val ok: Boolean,
     val status: String?,
     val checkInTime: String?,
-    val checkOutTime: String?
+    val checkOutTime: String?,
+    val workingHours: Double?
 )
 
 // Constructed locally from TodayAttendanceResponse; type is "in" or "out"

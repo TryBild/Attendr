@@ -27,6 +27,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.trybild.attendr.ui.theme.*
+import com.trybild.attendr.utils.formatIsoTime
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -39,7 +40,7 @@ private val LeaveBlue    = Color(0xFF1565C0)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MyAttendanceScreen(navController: NavController) {
+fun MyAttendanceScreen(navController: NavController, showBackButton: Boolean = true) {
     val vm: MyAttendanceViewModel = viewModel()
     val state by vm.state.collectAsStateWithLifecycle()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -49,11 +50,11 @@ fun MyAttendanceScreen(navController: NavController) {
         topBar = {
             TopAppBar(
                 title = { Text("My Attendance", style = MaterialTheme.typography.headlineMedium) },
-                navigationIcon = {
+                navigationIcon = if (showBackButton) ({
                     IconButton(onClick = { navController.navigateUp() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
-                },
+                }) else ({}),
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = AttendrBackground)
             )
         }
@@ -446,15 +447,4 @@ private fun longDate(dateStr: String): String {
     } catch (e: Exception) { dateStr }
 }
 
-private fun formatIsoTime(isoString: String?): String? {
-    if (isoString.isNullOrBlank()) return null
-    return try {
-        val inFmt = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
-            timeZone = TimeZone.getTimeZone("UTC")
-        }
-        val date = inFmt.parse(isoString) ?: return isoString.take(16)
-        SimpleDateFormat("h:mm a", Locale.ENGLISH).apply {
-            timeZone = TimeZone.getTimeZone("Asia/Kolkata")
-        }.format(date)
-    } catch (_: Exception) { isoString.take(16) }
-}
+// formatIsoTime is in com.trybild.attendr.utils.TimeUtils
