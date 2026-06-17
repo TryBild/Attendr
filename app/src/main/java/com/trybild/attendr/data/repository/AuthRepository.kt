@@ -157,6 +157,36 @@ class AuthRepository(context: Context) {
         }
     }
 
+    suspend fun getMyAttendance(month: String): Result<MyAttendanceResponse> {
+        return try {
+            val token = dataStore.token.firstOrNull()
+                ?: return Result.failure(Exception("Not logged in"))
+            val res = api.getMyAttendance("Bearer $token", month)
+            if (res.isSuccessful && res.body()?.ok == true) {
+                Result.success(res.body()!!)
+            } else {
+                Result.failure(Exception(res.body()?.error ?: "Could not fetch attendance"))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception(e.message ?: "Network error"))
+        }
+    }
+
+    suspend fun getGeofences(): Result<GeofencesResponse> {
+        return try {
+            val token = dataStore.token.firstOrNull()
+                ?: return Result.failure(Exception("Not logged in"))
+            val res = api.getGeofences("Bearer $token")
+            if (res.isSuccessful && res.body()?.ok == true) {
+                Result.success(res.body()!!)
+            } else {
+                Result.failure(Exception(res.body()?.error ?: "Could not fetch geofences"))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception(e.message ?: "Network error"))
+        }
+    }
+
     suspend fun adminProfile(): Result<AdminProfileResponse> {
         return try {
             val token = dataStore.token.firstOrNull()
