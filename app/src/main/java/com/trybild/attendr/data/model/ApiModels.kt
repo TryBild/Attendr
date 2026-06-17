@@ -44,10 +44,23 @@ data class EmployeeProfile(
     val company: EmployeeCompany?
 )
 data class AuthResponse(val ok: Boolean, val token: String?, val employee: EmployeeProfile?, val error: String?)
-data class MarkAttendanceBody(val type: String, val lat: Double?, val lng: Double?, val mock: Boolean = false)
-data class AttendanceLog(val type: String, val at: String, val mockDetected: Boolean)
-data class TodayLogsResponse(val ok: Boolean, val logs: List<AttendanceLog>?)
-data class AttendanceResponse(val ok: Boolean, val at: String?, val flagged: Boolean?, val error: String?)
+// Body must match backend: const { latitude, longitude, action } = req.body
+// action values must be "checkin" or "checkout" (not "in"/"out")
+data class MarkAttendanceBody(val action: String, val latitude: Double?, val longitude: Double?)
+
+// Backend success: { ok, action, time, status, geofence, distance }
+data class AttendanceResponse(val ok: Boolean, val action: String?, val time: String?, val error: String?)
+
+// Backend GET /attendance/today: single record { ok, status, checkInTime, checkOutTime, ... }
+data class TodayAttendanceResponse(
+    val ok: Boolean,
+    val status: String?,
+    val checkInTime: String?,
+    val checkOutTime: String?
+)
+
+// Constructed locally from TodayAttendanceResponse; type is "in" or "out"
+data class AttendanceLog(val type: String, val at: String)
 
 // Admin dashboard
 data class DashboardTodayStats(
@@ -111,5 +124,43 @@ data class DayRegisterResponse(
     val rows: List<DayRegisterRow>?,
     val present: Int = 0,
     val total: Int = 0,
+    val error: String?
+)
+
+// Employee: GET /api/attendance/my
+data class MyAttendanceRecord(
+    val date: String,
+    val status: String,
+    val checkInTime: String?,
+    val checkOutTime: String?,
+    val workingHours: Double?
+)
+data class MyAttendanceSummary(
+    val totalMarked: Int,
+    val present: Int,
+    val absent: Int,
+    val late: Int,
+    val leaves: Int,
+    val workingDays: Int,
+    val attendancePercent: Int
+)
+data class MyAttendanceResponse(
+    val ok: Boolean,
+    val month: String?,
+    val records: List<MyAttendanceRecord>?,
+    val summary: MyAttendanceSummary?,
+    val error: String?
+)
+
+// Employee: GET /api/attendance/geofences
+data class GeofenceItem(
+    val name: String,
+    val latitude: Double,
+    val longitude: Double,
+    val radiusMeters: Double
+)
+data class GeofencesResponse(
+    val ok: Boolean,
+    val geofences: List<GeofenceItem>?,
     val error: String?
 )

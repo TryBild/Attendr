@@ -3,23 +3,33 @@ package com.trybild.attendr.ui.home
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.trybild.attendr.ui.components.LogoIcon
 
+private val BadgeGreen = Color(0xFF16A34A)
+private val BadgeAmber = Color(0xFFD97706)
+
 @Composable
-fun HomeScreen() {
+fun HomeScreen(navController: NavController) {
     val vm: HomeViewModel = viewModel()
     val state by vm.state.collectAsState()
     val logs by vm.logs.collectAsState()
+    val badge by vm.badge.collectAsState()
     var errorMsg by remember { mutableStateOf("") }
     var successMsg by remember { mutableStateOf("") }
     var locationGranted by remember { mutableStateOf(false) }
@@ -38,6 +48,11 @@ fun HomeScreen() {
         ))
     }
 
+    LaunchedEffect(locationGranted) {
+        if (locationGranted) vm.onLocationPermissionGranted()
+        else vm.onLocationPermissionDenied()
+    }
+
     LaunchedEffect(state) {
         when (val s = state) {
             is HomeState.CheckedIn  -> { successMsg = "Checked in ✅"; errorMsg = ""; vm.resetState() }
@@ -53,7 +68,39 @@ fun HomeScreen() {
     ) {
         Spacer(Modifier.height(40.dp))
         LogoIcon(size = 64.dp)
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(24.dp))
+
+        // Geofence badge
+        val (badgeText, badgeColor) = when (val b = badge) {
+            is GeofenceBadge.InsideZone      -> "Inside office zone" to BadgeGreen
+            is GeofenceBadge.DistanceAway    -> "${b.meters}m away from office" to BadgeAmber
+            else                             -> null to null
+        }
+        if (badgeText != null && badgeColor != null) {
+            Surface(
+                shape = RoundedCornerShape(50),
+                color = badgeColor.copy(alpha = 0.10f)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Box(modifier = Modifier
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .background(badgeColor))
+                    Text(
+                        badgeText,
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
+                        color = badgeColor
+                    )
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+        } else {
+            Spacer(Modifier.height(8.dp))
+        }
 
         if (!locationGranted) {
             Button(onClick = {
@@ -96,7 +143,17 @@ fun HomeScreen() {
         }
 
         Spacer(Modifier.height(24.dp))
-        Text("Today's Log", style = MaterialTheme.typography.titleMedium)
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Today's Log", style = MaterialTheme.typography.titleMedium)
+            TextButton(onClick = { navController.navigate("my_attendance") }) {
+                Text("My Attendance →", style = MaterialTheme.typography.labelMedium)
+            }
+        }
         Spacer(Modifier.height(8.dp))
 
         if (logs.isEmpty()) {
