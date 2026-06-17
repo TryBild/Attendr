@@ -13,13 +13,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import com.trybild.attendr.ui.components.GeofenceBadgeChip
 import com.trybild.attendr.ui.components.LogoIcon
 
 @Composable
-fun HomeScreen() {
-    val vm: HomeViewModel = viewModel()
+fun HomeScreen(
+    navController: NavController,
+    vm: HomeViewModel = viewModel(),
+    onViewCalendar: () -> Unit = { navController.navigate("my_attendance") }
+) {
     val state by vm.state.collectAsState()
     val logs by vm.logs.collectAsState()
+    val badge by vm.badge.collectAsState()
     var errorMsg by remember { mutableStateOf("") }
     var successMsg by remember { mutableStateOf("") }
     var locationGranted by remember { mutableStateOf(false) }
@@ -38,6 +44,11 @@ fun HomeScreen() {
         ))
     }
 
+    LaunchedEffect(locationGranted) {
+        if (locationGranted) vm.onLocationPermissionGranted()
+        else vm.onLocationPermissionDenied()
+    }
+
     LaunchedEffect(state) {
         when (val s = state) {
             is HomeState.CheckedIn  -> { successMsg = "Checked in ✅"; errorMsg = ""; vm.resetState() }
@@ -53,7 +64,10 @@ fun HomeScreen() {
     ) {
         Spacer(Modifier.height(40.dp))
         LogoIcon(size = 64.dp)
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(24.dp))
+
+        GeofenceBadgeChip(badge)
+        Spacer(Modifier.height(if (badge is GeofenceBadge.InsideZone || badge is GeofenceBadge.DistanceAway) 16.dp else 8.dp))
 
         if (!locationGranted) {
             Button(onClick = {
@@ -96,7 +110,17 @@ fun HomeScreen() {
         }
 
         Spacer(Modifier.height(24.dp))
-        Text("Today's Log", style = MaterialTheme.typography.titleMedium)
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Today's Log", style = MaterialTheme.typography.titleMedium)
+            TextButton(onClick = onViewCalendar) {
+                Text("My Attendance →", style = MaterialTheme.typography.labelMedium)
+            }
+        }
         Spacer(Modifier.height(8.dp))
 
         if (logs.isEmpty()) {

@@ -37,7 +37,7 @@ interface ApiService {
     @GET("attendance/today")
     suspend fun getTodayLogs(
         @Header("Authorization") token: String
-    ): Response<TodayLogsResponse>
+    ): Response<TodayAttendanceResponse>
 
     @GET("admin/employees")
     suspend fun getAdminEmployees(
@@ -54,4 +54,15 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Query("date") date: String
     ): Response<DayRegisterResponse>
+
+    @GET("attendance/my")
+    suspend fun getMyAttendance(
+        @Header("Authorization") token: String,
+        @Query("month") month: String
+    ): Response<MyAttendanceResponse>
+
+    @GET("attendance/geofences")
+    suspend fun getGeofences(
+        @Header("Authorization") token: String
+    ): Response<GeofencesResponse>
 }
