@@ -1,16 +1,28 @@
 import { request } from "./client";
 import type { EmployeeInfo, AdminInfo } from "../store/auth";
 
-export const requestOtp = (fullName: string, mobile: string, teamId: string) =>
+export const requestOtp = (mobile: string, teamId: string, purpose: "register" | "forgot", fullName?: string) =>
   request<{ ok: true; message: string; expiresInMinutes: number }>("/auth/otp/request", {
     method: "POST",
-    body: JSON.stringify({ fullName, mobile, teamId }),
+    body: JSON.stringify({ mobile, teamId, purpose, ...(fullName && { fullName }) }),
   });
 
 export const verifyOtp = (mobile: string, teamId: string, otp: string) =>
-  request<{ ok: true; token: string; employee: EmployeeInfo }>("/auth/otp/verify", {
+  request<{ ok: true; pendingToken: string; fullName: string }>("/auth/otp/verify", {
     method: "POST",
     body: JSON.stringify({ mobile, teamId, otp }),
+  });
+
+export const employeeSetPassword = (pendingToken: string, password: string, confirmPassword: string) =>
+  request<{ ok: true; token: string; employee: EmployeeInfo }>("/auth/employee/set-password", {
+    method: "POST",
+    body: JSON.stringify({ pendingToken, password, confirmPassword }),
+  });
+
+export const employeeLogin = (mobile: string, teamId: string, password: string) =>
+  request<{ ok: true; token: string; employee: EmployeeInfo }>("/auth/employee/login", {
+    method: "POST",
+    body: JSON.stringify({ mobile, teamId, password }),
   });
 
 export const adminLogin = (email: string, password: string) =>

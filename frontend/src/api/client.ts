@@ -25,8 +25,9 @@ export async function request<T>(
   });
 
   if (res.status === 401) {
+    const kind = useAuthStore.getState().kind;
     useAuthStore.getState().clear();
-    window.location.href = "/register";
+    window.location.href = kind === "admin" ? "/admin/login" : "/employee/login";
     throw new ApiError(401, "Session expired");
   }
 

@@ -11,7 +11,7 @@ export function ProtectedRoute({ kind, children }: Props) {
   const { isAuthenticated, kind: userKind } = useAuth();
 
   if (!isAuthenticated) {
-    return <Navigate to={`/login/${kind}`} replace />;
+    return <Navigate to={kind === "admin" ? "/admin/login" : "/employee/login"} replace />;
   }
 
   if (userKind !== kind) {

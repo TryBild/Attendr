@@ -12,7 +12,7 @@ export default function RoleSelection() {
   function handleSelect(role: Role) {
     setSelected(role);
     if (role === "admin") navigate("/admin/login");
-    else navigate("/register");
+    else navigate("/employee/login");
   }
 
   return (

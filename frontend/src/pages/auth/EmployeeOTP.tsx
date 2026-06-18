@@ -3,14 +3,19 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import toast from "react-hot-toast";
 import { verifyOtp, requestOtp } from "../../api/auth";
-import { useAuth } from "../../hooks/useAuth";
 import { maskMobile } from "../../lib/utils";
+
+interface OTPState {
+  mobile: string;
+  teamId: string;
+  fullName: string;
+  purpose: "register" | "forgot";
+}
 
 export default function EmployeeOTP() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { setEmployee } = useAuth();
-  const state = location.state as { mobile: string; teamId: string; fullName: string } | null;
+  const state = location.state as OTPState | null;
 
   const [digits, setDigits] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
@@ -19,12 +24,13 @@ export default function EmployeeOTP() {
   const [error, setError] = useState("");
   const inputs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Redirect if no state
+  const purpose = state?.purpose || "register";
+  const backPath = purpose === "forgot" ? "/employee/forgot-password" : "/register";
+
   useEffect(() => {
-    if (!state?.mobile) navigate("/register", { replace: true });
+    if (!state?.mobile) navigate(backPath, { replace: true });
   }, []);
 
-  // Countdown timer
   useEffect(() => {
     if (countdown <= 0) { setCanResend(true); return; }
     const t = setTimeout(() => setCountdown((c) => c - 1), 1000);
@@ -62,11 +68,16 @@ export default function EmployeeOTP() {
     setError("");
     try {
       const res = await verifyOtp(state.mobile, state.teamId, otp);
-      setEmployee(res.token, res.employee.company.teamId, res.employee);
-      toast.success(`Welcome, ${res.employee.fullName}!`);
-      navigate("/employee/home", { replace: true });
-    } catch (err: any) {
-      setError(err.message || "Invalid OTP");
+      navigate("/employee/set-password", {
+        state: {
+          pendingToken: res.pendingToken,
+          fullName: res.fullName,
+          purpose,
+        },
+        replace: true,
+      });
+    } catch (err: unknown) {
+      setError((err as Error).message || "Invalid OTP");
     } finally {
       setLoading(false);
     }
@@ -75,14 +86,14 @@ export default function EmployeeOTP() {
   async function handleResend() {
     if (!state || !canResend) return;
     try {
-      await requestOtp(state.fullName, state.mobile, state.teamId);
+      await requestOtp(state.mobile, state.teamId, purpose, purpose === "register" ? state.fullName : undefined);
       setCountdown(60);
       setCanResend(false);
       setDigits(["", "", "", "", "", ""]);
       toast.success("New OTP sent!");
       inputs.current[0]?.focus();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to resend OTP");
+    } catch (err: unknown) {
+      toast.error((err as Error).message || "Failed to resend OTP");
     }
   }
 
@@ -91,7 +102,7 @@ export default function EmployeeOTP() {
   return (
     <div className="min-h-screen flex flex-col bg-white max-w-md mx-auto">
       <div className="px-6 pt-12">
-        <Link to="/register" className="inline-flex items-center text-gray-500 hover:text-gray-700 mb-8">
+        <Link to={backPath} className="inline-flex items-center text-gray-500 hover:text-gray-700 mb-8">
           <ArrowLeft size={20} />
         </Link>
 

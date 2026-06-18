@@ -102,16 +102,17 @@ export default function MyAttendance() {
             const dateStr = `${year}-${String(mon).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
             const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
             const isToday = dateStr === today;
+            const isFuture = dateStr > today;
             const status = recordMap[dateStr];
             const dayOfWeek = new Date(year, mon - 1, day).getDay();
             const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
 
             return (
               <div key={day} className={`flex flex-col items-center py-2 rounded-xl ${isToday ? "bg-blue-900" : ""}`}>
-                <span className={`text-xs font-medium ${isToday ? "text-white" : isWeekend ? "text-gray-300" : "text-gray-700"}`}>
+                <span className={`text-xs font-medium ${isToday ? "text-white" : isWeekend ? "text-gray-300" : isFuture ? "text-gray-300" : "text-gray-700"}`}>
                   {day}
                 </span>
-                {!isWeekend && (
+                {!isWeekend && !isFuture && (
                   <div className={`w-2 h-2 rounded-full mt-1 ${
                     status === "present" ? "bg-green-500" :
                     status === "late"    ? "bg-orange-500" :
