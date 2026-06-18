@@ -17,8 +17,8 @@ export function requireAuth(kinds = ["admin", "employee"]) {
   };
 }
 
-export function signToken(payload) {
+export function signToken(payload, expiresIn) {
   return jwt.sign(payload, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || "30d",
+    expiresIn: expiresIn || process.env.JWT_EXPIRES_IN || "30d",
   });
 }

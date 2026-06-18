@@ -1,17 +1,13 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Check, Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { ArrowLeft, Check } from "lucide-react";
 import toast from "react-hot-toast";
-import { employeeLogin } from "../../api/auth";
-import { useAuth } from "../../hooks/useAuth";
+import { requestOtp } from "../../api/auth";
 
-export default function EmployeeLogin() {
+export default function EmployeeForgotPassword() {
   const navigate = useNavigate();
-  const { setEmployee } = useAuth();
   const [mobile, setMobile] = useState("");
   const [teamId, setTeamId] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -21,7 +17,6 @@ export default function EmployeeLogin() {
     const e: Record<string, string> = {};
     if (!mobileValid) e.mobile = "Enter a valid 10-digit Indian mobile number";
     if (!teamId.trim()) e.teamId = "Team ID is required";
-    if (!password) e.password = "Password is required";
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -31,10 +26,9 @@ export default function EmployeeLogin() {
     if (!validate()) return;
     setLoading(true);
     try {
-      const res = await employeeLogin(mobile.trim(), teamId.trim().toUpperCase(), password);
-      setEmployee(res.token, res.employee.company.teamId, res.employee);
-      toast.success(`Welcome back, ${res.employee.fullName}!`);
-      navigate("/employee/home", { replace: true });
+      const res = await requestOtp(mobile.trim(), teamId.trim().toUpperCase(), "forgot");
+      toast.success(res.message);
+      navigate("/verify-otp", { state: { mobile, teamId: teamId.toUpperCase(), fullName: "", purpose: "forgot" } });
     } catch (err: unknown) {
       const msg = (err as Error).message || "Something went wrong";
       toast.error(msg);
@@ -46,7 +40,7 @@ export default function EmployeeLogin() {
   return (
     <div className="min-h-screen flex flex-col bg-white max-w-md mx-auto">
       <div className="px-6 pt-12 pb-4">
-        <Link to="/role" className="inline-flex items-center text-gray-500 hover:text-gray-700 mb-6">
+        <Link to="/employee/login" className="inline-flex items-center text-gray-500 hover:text-gray-700 mb-6">
           <ArrowLeft size={20} />
         </Link>
 
@@ -55,11 +49,10 @@ export default function EmployeeLogin() {
           <span className="text-xl font-bold text-blue-900" style={{ fontFamily: "Nunito, sans-serif" }}>Attendr</span>
         </div>
 
-        <h1 className="text-2xl font-bold text-gray-900 mb-1" style={{ fontFamily: "Nunito, sans-serif" }}>Log in</h1>
-        <p className="text-gray-500 text-sm mb-8">Welcome back! Enter your credentials</p>
+        <h1 className="text-2xl font-bold text-gray-900 mb-1" style={{ fontFamily: "Nunito, sans-serif" }}>Forgot Password</h1>
+        <p className="text-gray-500 text-sm mb-8">Enter your details and we'll send an OTP to reset your password</p>
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Team ID */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Team ID / Organization ID</label>
             <input
@@ -72,7 +65,6 @@ export default function EmployeeLogin() {
             {errors.teamId && <p className="text-red-500 text-xs mt-1">{errors.teamId}</p>}
           </div>
 
-          {/* Mobile */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Mobile Number</label>
             <div className="relative flex items-center">
@@ -95,33 +87,6 @@ export default function EmployeeLogin() {
             {errors.mobile && <p className="text-red-500 text-xs mt-1">{errors.mobile}</p>}
           </div>
 
-          {/* Password */}
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="block text-sm font-medium text-gray-700">Password</label>
-              <Link to="/employee/forgot-password" className="text-xs text-blue-700 font-medium hover:underline">
-                Forgot Password?
-              </Link>
-            </div>
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
-                className={`w-full px-4 py-3 pr-12 rounded-xl border text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-600 ${errors.password ? "border-red-400 bg-red-50" : "border-gray-200 bg-gray-50"}`}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
-            {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
-          </div>
-
           <button
             type="submit"
             disabled={loading}
@@ -129,13 +94,13 @@ export default function EmployeeLogin() {
           >
             {loading ? (
               <svg className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full" viewBox="0 0 24 24" />
-            ) : "Log in"}
+            ) : "Send OTP"}
           </button>
         </form>
 
         <p className="text-center text-sm text-gray-400 mt-6">
-          New here?{" "}
-          <Link to="/register" className="text-blue-700 font-medium hover:underline">Create Account</Link>
+          Remember your password?{" "}
+          <Link to="/employee/login" className="text-blue-700 font-medium hover:underline">Log in</Link>
         </p>
       </div>
     </div>

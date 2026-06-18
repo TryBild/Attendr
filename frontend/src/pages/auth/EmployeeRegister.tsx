@@ -28,9 +28,9 @@ export default function EmployeeRegister() {
     if (!validate()) return;
     setLoading(true);
     try {
-      const res = await requestOtp(fullName.trim(), mobile.trim(), teamId.trim().toUpperCase());
+      const res = await requestOtp(mobile.trim(), teamId.trim().toUpperCase(), "register", fullName.trim());
       toast.success(res.message);
-      navigate("/verify-otp", { state: { mobile, teamId: teamId.toUpperCase(), fullName } });
+      navigate("/verify-otp", { state: { mobile, teamId: teamId.toUpperCase(), fullName, purpose: "register" } });
     } catch (err: any) {
       const msg = err.message || "Something went wrong";
       if (msg.toLowerCase().includes("organization not found") || msg.toLowerCase().includes("not found")) {
@@ -121,8 +121,8 @@ export default function EmployeeRegister() {
         </form>
 
         <p className="text-center text-sm text-gray-400 mt-6">
-          Are you an admin?{" "}
-          <Link to="/admin/login" className="text-blue-700 font-medium hover:underline">Admin Login</Link>
+          Already have an account?{" "}
+          <Link to="/employee/login" className="text-blue-700 font-medium hover:underline">Log in</Link>
         </p>
       </div>
     </div>

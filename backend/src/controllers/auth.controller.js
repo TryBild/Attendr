@@ -1,3 +1,4 @@
+import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { Company, Department, Employee, Geofence } from "../models/index.js";
 import { sendOTP } from "../services/otpService.js";
@@ -25,9 +26,11 @@ function todayIST() {
 // POST /api/auth/otp/request
 export async function requestOTP(req, res) {
   try {
-    const { fullName, mobile, teamId } = req.body;
-    if (!fullName || !mobile || !teamId)
-      return err(res, "fullName, mobile, and teamId are required", 400);
+    const { fullName, mobile, teamId, purpose = "register" } = req.body;
+    if (!mobile || !teamId)
+      return err(res, "mobile and teamId are required", 400);
+    if (purpose === "register" && !fullName)
+      return err(res, "fullName is required for registration", 400);
     if (!/^[6-9]\d{9}$/.test(mobile))
       return err(res, "Enter a valid 10-digit Indian mobile number", 400);
 
@@ -39,10 +42,16 @@ export async function requestOTP(req, res) {
 
     if (employee) {
       if (!employee.isActive) return err(res, "Your account has been deactivated. Contact HR.", 403);
-      if (employee.fullName !== fullName.trim()) {
+      if (purpose === "register" && employee.passwordHash)
+        return err(res, "Account already exists. Please log in.", 409);
+      if (purpose === "forgot" && !employee.passwordHash)
+        return err(res, "No account found. Please register first.", 404);
+      if (purpose === "register" && fullName && employee.fullName !== fullName.trim()) {
         employee.fullName = fullName.trim();
       }
     } else {
+      if (purpose === "forgot")
+        return err(res, "No account found. Please register first.", 404);
       employee = new Employee({
         company: company._id,
         fullName: fullName.trim(),
@@ -96,9 +105,7 @@ export async function verifyOTP(req, res) {
     const company = await Company.findOne({ teamId: teamId.toUpperCase() });
     if (!company) return err(res, "Organization not found.", 404);
 
-    const employee = await Employee.findOne({ mobile, company: company._id })
-      .populate("company", "name teamId")
-      .populate("department", "name");
+    const employee = await Employee.findOne({ mobile, company: company._id });
 
     if (!employee) return err(res, "Employee not found.", 404);
     if (!employee.otp || !employee.otpExpiry)
@@ -121,7 +128,96 @@ export async function verifyOTP(req, res) {
     employee.otpExpiry = undefined;
     employee.otpAttempts = 0;
     employee.otpLockedUntil = undefined;
+    await employee.save();
+
+    const pendingToken = signToken({
+      id:        employee._id,
+      companyId: company._id,
+      teamId:    company.teamId,
+      kind:      "pending",
+    }, "5m");
+
+    return res.json({
+      ok: true,
+      pendingToken,
+      fullName: employee.fullName,
+    });
+  } catch (e) {
+    console.error(e);
+    err(res, e.message);
+  }
+}
+
+// POST /api/auth/employee/set-password
+export async function employeeSetPassword(req, res) {
+  try {
+    const { pendingToken, password, confirmPassword } = req.body;
+    if (!pendingToken || !password || !confirmPassword)
+      return err(res, "pendingToken, password, and confirmPassword are required", 400);
+    if (password !== confirmPassword)
+      return err(res, "Passwords do not match", 400);
+    if (password.length < 6)
+      return err(res, "Password must be at least 6 characters", 400);
+
+    let payload;
+    try {
+      payload = jwt.verify(pendingToken, process.env.JWT_SECRET);
+    } catch {
+      return err(res, "Session expired. Please verify OTP again.", 401);
+    }
+    if (payload.kind !== "pending")
+      return err(res, "Invalid token", 401);
+
+    const employee = await Employee.findById(payload.id)
+      .populate("company", "name teamId")
+      .populate("department", "name");
+    if (!employee) return err(res, "Employee not found.", 404);
+
+    employee.passwordHash = await bcrypt.hash(password, 12);
     employee.isVerified = true;
+    employee.lastLogin = new Date();
+    await employee.save();
+
+    const token = signToken({
+      id:        employee._id,
+      companyId: payload.companyId,
+      teamId:    payload.teamId,
+      kind:      "employee",
+    });
+
+    return res.json({
+      ok: true,
+      token,
+      employee: buildEmployeeResponse(employee),
+    });
+  } catch (e) {
+    console.error(e);
+    err(res, e.message);
+  }
+}
+
+// POST /api/auth/employee/login
+export async function employeeLogin(req, res) {
+  try {
+    const { mobile, teamId, password } = req.body;
+    if (!mobile || !teamId || !password)
+      return err(res, "mobile, teamId, and password are required", 400);
+
+    const company = await Company.findOne({ teamId: teamId.toUpperCase() });
+    if (!company) return err(res, "Invalid credentials.", 401);
+    if (!company.isActive) return err(res, "Organization account is inactive.", 403);
+
+    const employee = await Employee.findOne({ mobile, company: company._id })
+      .populate("company", "name teamId")
+      .populate("department", "name");
+    if (!employee || !employee.passwordHash)
+      return err(res, "Invalid credentials.", 401);
+    if (!employee.isActive)
+      return err(res, "Your account has been deactivated. Contact HR.", 403);
+
+    const valid = await bcrypt.compare(password, employee.passwordHash);
+    if (!valid) return err(res, "Invalid credentials.", 401);
+
     employee.lastLogin = new Date();
     await employee.save();
 
@@ -135,24 +231,28 @@ export async function verifyOTP(req, res) {
     return res.json({
       ok: true,
       token,
-      employee: {
-        id:           employee._id,
-        fullName:     employee.fullName,
-        mobile:       employee.mobile,
-        employeeCode: employee.employeeCode,
-        designation:  employee.designation,
-        department:   employee.department?.name || null,
-        joinedAt:     employee.joinedAt,
-        company: {
-          name:   company.name,
-          teamId: company.teamId,
-        },
-      },
+      employee: buildEmployeeResponse(employee),
     });
   } catch (e) {
     console.error(e);
     err(res, e.message);
   }
+}
+
+function buildEmployeeResponse(employee) {
+  return {
+    id:           employee._id,
+    fullName:     employee.fullName,
+    mobile:       employee.mobile,
+    employeeCode: employee.employeeCode,
+    designation:  employee.designation,
+    department:   employee.department?.name || null,
+    joinedAt:     employee.joinedAt,
+    company: {
+      name:   employee.company.name,
+      teamId: employee.company.teamId,
+    },
+  };
 }
 
 // POST /api/auth/admin/login

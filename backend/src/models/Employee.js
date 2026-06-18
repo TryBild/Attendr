@@ -7,6 +7,7 @@ const employeeSchema = new mongoose.Schema({
   mobile:        { type: String, required: true, trim: true },
   employeeCode:  { type: String },
   designation:   { type: String },
+  passwordHash:  { type: String },
   isActive:      { type: Boolean, default: true },
   isVerified:    { type: Boolean, default: false },
   joinedAt:      { type: Date, default: Date.now },
