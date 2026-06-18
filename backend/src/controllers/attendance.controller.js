@@ -130,6 +130,11 @@ export async function getMyAttendance(req, res) {
     const lastDay = new Date(year, month, 0).getDate();
     const endDate = `${year}-${String(month).padStart(2, "0")}-${lastDay}`;
 
+    const today = todayIST();
+    const [todayY, todayM, todayD] = today.split("-").map(Number);
+    const isCurrentMonth = todayY === year && todayM === month;
+    const effectiveLastDay = isCurrentMonth ? Math.min(todayD, lastDay) : lastDay;
+
     const records = await Attendance.find({
       employee: req.auth.id,
       company:  req.auth.companyId,
@@ -140,7 +145,7 @@ export async function getMyAttendance(req, res) {
     const late     = records.filter((r) => r.status === "late").length;
     const leaves   = records.filter((r) => r.status === "leave").length;
     const totalMarked = records.length;
-    const workingDays = lastDay - getWeekends(year, month);
+    const workingDays = effectiveLastDay - getWeekends(year, month, effectiveLastDay);
     const absent   = Math.max(0, workingDays - present - late - leaves);
     const attendancePercent = workingDays > 0 ? Math.round(((present + late) / workingDays) * 100) : 0;
 
@@ -173,9 +178,9 @@ export async function getGeofences(req, res) {
   }
 }
 
-function getWeekends(year, month) {
+function getWeekends(year, month, maxDay) {
   let count = 0;
-  const days = new Date(year, month, 0).getDate();
+  const days = maxDay || new Date(year, month, 0).getDate();
   for (let d = 1; d <= days; d++) {
     const day = new Date(year, month - 1, d).getDay();
     if (day === 0 || day === 6) count++;
