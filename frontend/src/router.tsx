@@ -1,12 +1,15 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
 
-import Welcome          from "./pages/Welcome";
-import RoleSelection    from "./pages/RoleSelection";
-import EmployeeRegister from "./pages/auth/EmployeeRegister";
-import EmployeeOTP    from "./pages/auth/EmployeeOTP";
-import AdminLogin     from "./pages/auth/AdminLogin";
-import AdminRegister  from "./pages/auth/AdminRegister";
+import Welcome               from "./pages/Welcome";
+import RoleSelection         from "./pages/RoleSelection";
+import EmployeeLogin         from "./pages/auth/EmployeeLogin";
+import EmployeeRegister      from "./pages/auth/EmployeeRegister";
+import EmployeeOTP           from "./pages/auth/EmployeeOTP";
+import EmployeeSetPassword   from "./pages/auth/EmployeeSetPassword";
+import EmployeeForgotPassword from "./pages/auth/EmployeeForgotPassword";
+import AdminLogin            from "./pages/auth/AdminLogin";
+import AdminRegister         from "./pages/auth/AdminRegister";
 
 import ClockInOut     from "./pages/employee/ClockInOut";
 import MyAttendance   from "./pages/employee/MyAttendance";
@@ -43,12 +46,15 @@ function AdminSetupRoute() {
 }
 
 export const router = createBrowserRouter([
-  { path: "/",               element: <Welcome /> },
-  { path: "/role",           element: <RoleSelection /> },
-  { path: "/register",       element: <EmployeeRegister /> },
-  { path: "/verify-otp",     element: <EmployeeOTP /> },
-  { path: "/admin/login",    element: <AdminLogin /> },
-  { path: "/admin/register", element: <AdminRegister /> },
+  { path: "/",                        element: <Welcome /> },
+  { path: "/role",                    element: <RoleSelection /> },
+  { path: "/employee/login",          element: <EmployeeLogin /> },
+  { path: "/register",                element: <EmployeeRegister /> },
+  { path: "/verify-otp",              element: <EmployeeOTP /> },
+  { path: "/employee/set-password",   element: <EmployeeSetPassword /> },
+  { path: "/employee/forgot-password",element: <EmployeeForgotPassword /> },
+  { path: "/admin/login",             element: <AdminLogin /> },
+  { path: "/admin/register",          element: <AdminRegister /> },
 
   // Employee routes
   {
