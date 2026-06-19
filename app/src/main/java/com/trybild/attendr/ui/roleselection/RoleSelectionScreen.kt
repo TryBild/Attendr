@@ -81,7 +81,7 @@ fun RoleSelectionScreen(navController: NavController) {
                 icon = Icons.Default.Person,
                 title = "Employee",
                 subtitle = "I mark my daily attendance",
-                onClick = { navController.navigate("register") }
+                onClick = { navController.navigate("employee_auth") }
             )
         }
     }
