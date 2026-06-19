@@ -28,6 +28,9 @@ interface ApiService {
     @POST("auth/otp/verify")
     suspend fun verifyOtp(@Body body: OtpVerifyBody): Response<AuthResponse>
 
+    @POST("auth/employee/login")
+    suspend fun employeeLogin(@Body body: EmployeeLoginRequest): Response<AuthResponse>
+
     @POST("attendance/mark")
     suspend fun markAttendance(
         @Header("Authorization") token: String,
