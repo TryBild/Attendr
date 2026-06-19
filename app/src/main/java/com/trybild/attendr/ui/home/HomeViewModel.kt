@@ -18,9 +18,12 @@ import com.trybild.attendr.data.model.AttendanceLog
 import com.trybild.attendr.data.model.AttendanceResponse
 import com.trybild.attendr.data.model.GeofenceItem
 import com.trybild.attendr.data.model.MarkAttendanceBody
+import com.trybild.attendr.data.model.MyAttendanceRecord
+import com.trybild.attendr.data.repository.AuthRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import java.util.Calendar
 import kotlin.math.*
 
 sealed class HomeState {
@@ -42,6 +45,7 @@ sealed class GeofenceBadge {
 class HomeViewModel(app: Application) : AndroidViewModel(app) {
     private val dataStore = TokenDataStore(app)
     private val api = RetrofitClient.api
+    private val repo = AuthRepository(app)
     private val fusedLocation = LocationServices.getFusedLocationProviderClient(app)
 
     private val _state = MutableStateFlow<HomeState>(HomeState.Idle)
@@ -49,6 +53,12 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
 
     private val _logs = MutableStateFlow<List<AttendanceLog>>(emptyList())
     val logs: StateFlow<List<AttendanceLog>> = _logs
+
+    private val _recent = MutableStateFlow<List<MyAttendanceRecord>>(emptyList())
+    val recent: StateFlow<List<MyAttendanceRecord>> = _recent
+
+    private val _employeeName = MutableStateFlow("")
+    val employeeName: StateFlow<String> = _employeeName
 
     private val _badge = MutableStateFlow<GeofenceBadge>(GeofenceBadge.Loading)
     val badge: StateFlow<GeofenceBadge> = _badge
@@ -59,7 +69,39 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
 
     init {
         loadTodayLogs()
+        loadRecentActivity()
         loadGeofences()
+        viewModelScope.launch {
+            _employeeName.value = dataStore.employeeName.firstOrNull() ?: ""
+        }
+    }
+
+    // Reuses the same getMyAttendance source the calendar/dashboard use; just filters the
+    // last few days client-side instead of adding a new endpoint.
+    fun loadRecentActivity() {
+        viewModelScope.launch {
+            try {
+                val cal = Calendar.getInstance()
+                val today = "%04d-%02d-%02d".format(
+                    cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH)
+                )
+                val curMonth = "%04d-%02d".format(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1)
+
+                val records = mutableListOf<MyAttendanceRecord>()
+                repo.getMyAttendance(curMonth).getOrNull()?.records?.let { records += it }
+
+                fun recentOf() = records.filter { it.date <= today }.sortedByDescending { it.date }
+
+                // Early in a month the current month alone may not cover 7 days — pull the
+                // previous month too so the quick-glance list stays full.
+                if (recentOf().size < 7) {
+                    cal.add(Calendar.MONTH, -1)
+                    val prevMonth = "%04d-%02d".format(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1)
+                    repo.getMyAttendance(prevMonth).getOrNull()?.records?.let { records += it }
+                }
+                _recent.value = recentOf().take(7)
+            } catch (_: Exception) {}
+        }
     }
 
     fun loadTodayLogs() {
@@ -173,6 +215,7 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
                     _state.value = if (type == "in") HomeState.CheckedIn(time)
                                    else HomeState.CheckedOut(time)
                     loadTodayLogs()
+                    loadRecentActivity()
                 } else {
                     // 4xx bodies are in errorBody(), not body()
                     val errMsg = runCatching {

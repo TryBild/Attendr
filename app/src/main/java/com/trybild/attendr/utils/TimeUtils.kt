@@ -25,6 +25,14 @@ fun isoToEpochMs(isoString: String?): Long? {
     } catch (_: Exception) { null }
 }
 
+fun formatShortDate(date: String?): String {
+    if (date.isNullOrBlank()) return "—"
+    return try {
+        val d = SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(date) ?: return date
+        SimpleDateFormat("EEE, d MMM", Locale.ENGLISH).format(d)
+    } catch (_: Exception) { date }
+}
+
 fun formatDuration(elapsedMs: Long): String {
     val h = elapsedMs / 3_600_000
     val m = (elapsedMs % 3_600_000) / 60_000
