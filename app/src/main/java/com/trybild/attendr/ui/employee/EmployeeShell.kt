@@ -1,5 +1,6 @@
 package com.trybild.attendr.ui.employee
 
+import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -86,6 +87,13 @@ fun EmployeeShell(outerNavController: NavController) {
                         vm = homeVm,
                         onViewCalendar = {
                             innerNav.navigate(EmployeeTab.CALENDAR.route) {
+                                popUpTo("tab_home") { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                        onOpenProfile = {
+                            innerNav.navigate(EmployeeTab.PROFILE.route) {
                                 popUpTo("tab_home") { saveState = true }
                                 launchSingleTop = true
                                 restoreState = true
