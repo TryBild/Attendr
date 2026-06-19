@@ -34,6 +34,9 @@ data class OtpRequestBody(val fullName: String, val mobile: String, val teamId: 
 data class OtpVerifyBody(val mobile: String, val teamId: String, val otp: String)
 data class OtpResponse(val ok: Boolean, val message: String?)
 
+// Backend: POST /auth/employee/login → { ok, token, employee: { ... } } (same shape as AuthResponse)
+data class EmployeeLoginRequest(val mobile: String, val teamId: String, val password: String)
+
 // Matches actual backend: POST /auth/otp/verify → { ok, token, employee: { ... } }
 data class EmployeeCompany(val name: String, val teamId: String)
 data class EmployeeProfile(
