@@ -1,4 +1,3 @@
-import bcrypt from "bcryptjs";
 import { Company, Department, Employee, Geofence, Attendance } from "../models/index.js";
 import { err } from "../utils/response.js";
 
