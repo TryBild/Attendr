@@ -1,4 +1,4 @@
-import { Attendance, Geofence, Employee } from "../models/index.js";
+import { Attendance, Geofence } from "../models/index.js";
 import { findMatchingGeofence, haversineDistance } from "../utils/geo.js";
 import { err } from "../utils/response.js";
 
