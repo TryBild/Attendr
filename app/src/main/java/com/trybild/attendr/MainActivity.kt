@@ -26,6 +26,8 @@ import com.trybild.attendr.ui.employee.EmployeeShell
 import com.trybild.attendr.ui.legal.DataUsageScreen
 import com.trybild.attendr.ui.legal.PrivacyScreen
 import com.trybild.attendr.ui.legal.TermsScreen
+import com.trybild.attendr.ui.register.EmployeeAuthChoiceScreen
+import com.trybild.attendr.ui.register.EmployeeLoginScreen
 import com.trybild.attendr.ui.register.OtpScreen
 import com.trybild.attendr.ui.register.RegisterScreen
 import com.trybild.attendr.ui.roleselection.RoleSelectionScreen
@@ -94,6 +96,14 @@ fun AppNav() {
 
         composable("admin_setup") {
             AdminSetupScreen(navController = navController)
+        }
+
+        composable("employee_auth") {
+            EmployeeAuthChoiceScreen(navController = navController)
+        }
+
+        composable("employee_login") {
+            EmployeeLoginScreen(navController = navController)
         }
 
         composable("register") {
