@@ -1,6 +1,7 @@
 package com.trybild.attendr.data.repository
 
 import android.content.Context
+import com.google.gson.Gson
 import com.trybild.attendr.data.api.RetrofitClient
 import com.trybild.attendr.data.local.TokenDataStore
 import com.trybild.attendr.data.model.*
@@ -56,6 +57,28 @@ class AuthRepository(context: Context) {
                 Result.success(body)
             } else {
                 val msg = res.body()?.error ?: "Invalid OTP. Please try again."
+                Result.failure(Exception(msg))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception(e.message ?: "Network error"))
+        }
+    }
+
+    suspend fun employeeLogin(mobile: String, teamId: String, password: String): Result<AuthResponse> {
+        return try {
+            val res = api.employeeLogin(EmployeeLoginRequest(mobile, teamId, password))
+            if (res.isSuccessful && res.body()?.ok == true) {
+                val body = res.body()!!
+                body.token?.let { dataStore.saveToken(it) }
+                dataStore.saveUserKind("employee")
+                body.employee?.fullName?.let { dataStore.saveEmployeeName(it) }
+                body.employee?.company?.name?.let { dataStore.saveCompanyName(it) }
+                Result.success(body)
+            } else {
+                // 401/403/404 bodies are in errorBody() as { ok:false, error }; surface the exact message.
+                val msg = runCatching {
+                    Gson().fromJson(res.errorBody()?.string(), AuthResponse::class.java)?.error
+                }.getOrNull() ?: res.body()?.error ?: "Login failed"
                 Result.failure(Exception(msg))
             }
         } catch (e: Exception) {
