@@ -2,6 +2,7 @@ package com.trybild.attendr.ui.employee
 
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
@@ -12,6 +13,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -19,6 +21,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.trybild.attendr.ui.components.AttendrBackground
 import com.trybild.attendr.ui.home.HomeScreen
 import com.trybild.attendr.ui.home.HomeViewModel
 import com.trybild.attendr.ui.myattendance.MyAttendanceScreen
@@ -44,11 +47,12 @@ fun EmployeeShell(outerNavController: NavController) {
     val backStackEntry by innerNav.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
 
+    AttendrBackground(modifier = Modifier.fillMaxSize()) {
     Scaffold(
-        containerColor = AttendrBackground,
+        containerColor = Color.Transparent,
         bottomBar = {
             NavigationBar(
-                containerColor = AttendrSurface,
+                containerColor = GlassSurface,
                 tonalElevation = 0.dp
             ) {
                 EmployeeTab.values().forEach { tab ->
@@ -119,5 +123,6 @@ fun EmployeeShell(outerNavController: NavController) {
                 }
             }
         }
+    }
     }
 }
