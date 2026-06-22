@@ -18,8 +18,12 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.trybild.attendr.ui.admin.AvatarCircle
+import com.trybild.attendr.ui.components.AttendrBackground
+import com.trybild.attendr.ui.components.AttendrButton
+import com.trybild.attendr.ui.components.AttendrCard
 import com.trybild.attendr.ui.components.GeofenceBadgeChip
 import com.trybild.attendr.ui.components.LogoIcon
+import com.trybild.attendr.ui.theme.AttendrError
 import com.trybild.attendr.utils.formatIsoTime
 import com.trybild.attendr.utils.formatShortDate
 
@@ -67,6 +71,7 @@ fun HomeScreen(
         }
     }
 
+    AttendrBackground(modifier = Modifier.fillMaxSize()) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -102,19 +107,19 @@ fun HomeScreen(
             }
         } else {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(
+                AttendrButton(
+                    text = "Check In",
                     onClick = { vm.markAttendance("in") },
                     modifier = Modifier.weight(1f),
-                    enabled = state !is HomeState.Loading,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF16A34A))
-                ) { Text("Check In") }
-
-                Button(
+                    enabled = state !is HomeState.Loading
+                )
+                AttendrButton(
+                    text = "Check Out",
                     onClick = { vm.markAttendance("out") },
                     modifier = Modifier.weight(1f),
                     enabled = state !is HomeState.Loading,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626))
-                ) { Text("Check Out") }
+                    containerColor = AttendrError
+                )
             }
         }
 
@@ -149,7 +154,7 @@ fun HomeScreen(
             Text("No attendance marked today", color = Color.Gray)
         } else {
             logs.forEach { log ->
-                Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                AttendrCard(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                     Row(
                         modifier = Modifier.padding(12.dp).fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
@@ -181,7 +186,7 @@ fun HomeScreen(
                     "leave", "leaves" -> Color(0xFF2563EB)
                     else -> Color.Gray
                 }
-                Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                AttendrCard(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                     Column(modifier = Modifier.padding(12.dp).fillMaxWidth()) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -215,5 +220,6 @@ fun HomeScreen(
                 }
             }
         }
+    }
     }
 }
