@@ -19,6 +19,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.trybild.attendr.ui.components.AttendrBackground
 import com.trybild.attendr.ui.components.AttendrButton
 import com.trybild.attendr.ui.theme.*
 
@@ -131,12 +132,13 @@ fun AdminSetupScreen(navController: NavController) {
 
     val isLoading = state is AdminSetupState.Loading
 
+    AttendrBackground(modifier = Modifier.fillMaxSize()) {
     Scaffold(
-        containerColor = AttendrBackground,
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = {},
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = AttendrBackground)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         }
     ) { padding ->
@@ -319,6 +321,7 @@ fun AdminSetupScreen(navController: NavController) {
 
             Spacer(Modifier.height(24.dp))
         }
+    }
     }
 }
 
