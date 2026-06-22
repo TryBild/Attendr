@@ -1,9 +1,8 @@
 package com.trybild.attendr.ui.roleselection
 
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
@@ -13,18 +12,22 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.trybild.attendr.ui.components.AttendrBackground
+import com.trybild.attendr.ui.components.AttendrCard
 import com.trybild.attendr.ui.components.LogoIcon
 import com.trybild.attendr.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RoleSelectionScreen(navController: NavController) {
+    AttendrBackground(modifier = Modifier.fillMaxSize()) {
     Scaffold(
-        containerColor = AttendrBackground,
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = {},
@@ -33,7 +36,7 @@ fun RoleSelectionScreen(navController: NavController) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = AttendrBackground)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         }
     ) { padding ->
@@ -85,6 +88,7 @@ fun RoleSelectionScreen(navController: NavController) {
             )
         }
     }
+    }
 }
 
 @Composable
@@ -94,14 +98,7 @@ private fun RoleCard(
     subtitle: String,
     onClick: () -> Unit
 ) {
-    Card(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = AttendrSurface),
-        border = BorderStroke(1.dp, AttendrBorder),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
+    AttendrCard(modifier = Modifier.fillMaxWidth().clickable { onClick() }) {
         Row(
             modifier = Modifier
                 .padding(16.dp)
