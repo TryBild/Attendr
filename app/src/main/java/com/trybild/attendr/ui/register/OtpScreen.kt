@@ -1,6 +1,7 @@
 package com.trybild.attendr.ui.register
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,6 +25,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.trybild.attendr.R
+import com.trybild.attendr.ui.components.AttendrBackground
 import com.trybild.attendr.ui.components.AttendrButton
 import com.trybild.attendr.ui.components.ErrorToast
 import com.trybild.attendr.ui.theme.*
@@ -76,9 +78,10 @@ fun OtpScreen(
 
     val otpFull = otpDigits.joinToString("")
 
+    AttendrBackground(modifier = Modifier.fillMaxSize()) {
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
-            containerColor = AttendrBackground,
+            containerColor = Color.Transparent,
             topBar = {
                 TopAppBar(
                     title = {},
@@ -87,7 +90,7 @@ fun OtpScreen(
                             Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                         }
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = AttendrBackground)
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
                 )
             }
         ) { padding ->
@@ -194,6 +197,7 @@ fun OtpScreen(
                 .padding(top = 72.dp, start = 16.dp, end = 16.dp)
         )
     }
+    }
 }
 
 @Composable
@@ -206,10 +210,14 @@ private fun OtpBox(
     Box(
         modifier = modifier
             .height(56.dp)
+            .background(
+                color = if (value.isNotEmpty()) AttendrNavy.copy(alpha = 0.08f) else GlassSurface,
+                shape = RoundedCornerShape(12.dp)
+            )
             .border(
                 width = if (value.isNotEmpty()) 2.dp else 1.dp,
-                color = if (value.isNotEmpty()) AttendrNavy else AttendrBorder,
-                shape = RoundedCornerShape(8.dp)
+                color = if (value.isNotEmpty()) AttendrNavy.copy(alpha = 0.5f) else GlassBorder,
+                shape = RoundedCornerShape(12.dp)
             ),
         contentAlignment = Alignment.Center
     ) {
