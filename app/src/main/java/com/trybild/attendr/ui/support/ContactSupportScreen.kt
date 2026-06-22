@@ -19,6 +19,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -27,6 +28,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.trybild.attendr.R
+import com.trybild.attendr.ui.components.AttendrBackground
 import com.trybild.attendr.ui.components.AttendrButton
 import com.trybild.attendr.ui.theme.*
 import java.io.File
@@ -78,8 +80,9 @@ fun ContactSupportScreen(navController: NavController, prefillIssue: String = ""
         cameraLauncher.launch(uri)
     }
 
+    AttendrBackground(modifier = Modifier.fillMaxSize()) {
     Scaffold(
-        containerColor = AttendrBackground,
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.support_title), style = MaterialTheme.typography.headlineMedium) },
@@ -88,7 +91,7 @@ fun ContactSupportScreen(navController: NavController, prefillIssue: String = ""
                         Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = AttendrBackground)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         }
     ) { padding ->
@@ -202,6 +205,7 @@ fun ContactSupportScreen(navController: NavController, prefillIssue: String = ""
 
             Spacer(Modifier.height(32.dp))
         }
+    }
     }
 }
 
