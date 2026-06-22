@@ -6,21 +6,22 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 private val AttendrColorScheme = lightColorScheme(
-    primary = AttendrNavy,
-    onPrimary = Color.White,
-    background = AttendrBackground,
-    surface = AttendrSurface,
-    onSurface = AttendrTextPrimary,
+    primary          = AttendrNavy,
+    onPrimary        = Color.White,
+    primaryContainer = Color(0xFFDEE8FF),
+    background       = AttendrBackground,
+    surface          = AttendrSurface,
+    onSurface        = AttendrTextPrimary,
     onSurfaceVariant = AttendrTextSecondary,
-    error = AttendrError,
-    outline = AttendrBorder
+    error            = AttendrError,
+    outline          = AttendrBorder
 )
 
 @Composable
 fun AttendrTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = AttendrColorScheme,
-        typography = AttendrTypography,
-        content = content
+        typography  = AttendrTypography,
+        content     = content
     )
 }
