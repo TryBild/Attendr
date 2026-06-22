@@ -46,7 +46,9 @@ fun MyAttendanceScreen(navController: NavController, showBackButton: Boolean = t
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     Scaffold(
-        containerColor = AttendrBackground,
+        // Hosted inside EmployeeShell, which already provides AttendrBackground —
+        // keep transparent so the animated glass background shows through.
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = { Text("My Attendance", style = MaterialTheme.typography.headlineMedium) },
@@ -55,7 +57,7 @@ fun MyAttendanceScreen(navController: NavController, showBackButton: Boolean = t
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 }) else ({}),
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = AttendrBackground)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         }
     ) { padding ->
