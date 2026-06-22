@@ -11,9 +11,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.trybild.attendr.ui.components.AttendrBackground
 import com.trybild.attendr.ui.components.AttendrCard
 import com.trybild.attendr.ui.theme.*
 
@@ -22,8 +24,9 @@ import com.trybild.attendr.ui.theme.*
 fun ArticleScreen(slug: String, navController: NavController) {
     val article = HelpArticles.bySlug[slug]
 
+    AttendrBackground(modifier = Modifier.fillMaxSize()) {
     Scaffold(
-        containerColor = AttendrBackground,
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = {
@@ -39,7 +42,7 @@ fun ArticleScreen(slug: String, navController: NavController) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = AttendrBackground)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         }
     ) { padding ->
@@ -109,6 +112,7 @@ fun ArticleScreen(slug: String, navController: NavController) {
 
             Spacer(Modifier.height(32.dp))
         }
+    }
     }
 }
 
