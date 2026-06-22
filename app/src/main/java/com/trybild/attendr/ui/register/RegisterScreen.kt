@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -18,6 +19,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.trybild.attendr.R
+import com.trybild.attendr.ui.components.AttendrBackground
 import com.trybild.attendr.ui.components.AttendrButton
 import com.trybild.attendr.ui.components.AttendrTextField
 import com.trybild.attendr.ui.components.ErrorToast
@@ -55,9 +57,10 @@ fun RegisterScreen(navController: NavController) {
 
     val isValid = name.isNotBlank() && phone.length == 10 && orgId.isNotBlank()
 
+    AttendrBackground(modifier = Modifier.fillMaxSize()) {
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
-            containerColor = MaterialTheme.colorScheme.background,
+            containerColor = Color.Transparent,
             topBar = {
                 TopAppBar(
                     title = {},
@@ -66,7 +69,7 @@ fun RegisterScreen(navController: NavController) {
                             Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                         }
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
                 )
             }
         ) { padding ->
@@ -144,5 +147,6 @@ fun RegisterScreen(navController: NavController) {
                 .align(Alignment.TopCenter)
                 .padding(top = 72.dp, start = 16.dp, end = 16.dp)
         )
+    }
     }
 }
