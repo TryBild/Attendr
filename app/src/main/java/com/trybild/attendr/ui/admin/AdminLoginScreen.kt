@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -22,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.trybild.attendr.ui.components.AttendrBackground
 import com.trybild.attendr.ui.components.AttendrButton
 import com.trybild.attendr.ui.components.AttendrTextField
 import com.trybild.attendr.ui.components.ErrorToast
@@ -59,9 +61,10 @@ fun AdminLoginScreen(navController: NavController) {
 
     val isLoading = state is AdminLoginState.Loading
 
+    AttendrBackground(modifier = Modifier.fillMaxSize()) {
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
-            containerColor = AttendrBackground,
+            containerColor = Color.Transparent,
             topBar = {
                 TopAppBar(
                     title = {},
@@ -70,7 +73,7 @@ fun AdminLoginScreen(navController: NavController) {
                             Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                         }
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = AttendrBackground)
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
                 )
             }
         ) { padding ->
@@ -162,5 +165,6 @@ fun AdminLoginScreen(navController: NavController) {
                 .align(Alignment.TopCenter)
                 .padding(top = 72.dp, start = 16.dp, end = 16.dp)
         )
+    }
     }
 }
