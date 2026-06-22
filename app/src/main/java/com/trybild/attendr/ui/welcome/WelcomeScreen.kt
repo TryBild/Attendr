@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.trybild.attendr.R
+import com.trybild.attendr.ui.components.AttendrBackground
 import com.trybild.attendr.ui.components.AttendrButton
 import com.trybild.attendr.ui.components.AttendrCard
 import com.trybild.attendr.ui.components.LogoIcon
@@ -52,7 +53,8 @@ fun WelcomeScreen(
         )
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    AttendrBackground(modifier = Modifier.fillMaxSize()) {
+      Box(modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.align(Alignment.TopEnd).padding(top = 12.dp, end = 8.dp)) {
             IconButton(onClick = { menuExpanded = true }) {
                 Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.cd_menu), tint = AttendrTextPrimary)
@@ -107,6 +109,7 @@ fun WelcomeScreen(
 
             Spacer(Modifier.height(24.dp))
         }
+      }
     }
 }
 
