@@ -27,6 +27,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.trybild.attendr.data.model.RecentActivityItem
+import com.trybild.attendr.ui.components.AttendrBackground
 import com.trybild.attendr.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -46,7 +47,8 @@ fun AdminHomeScreen(navController: NavController) {
     val vm: AdminDashboardViewModel = viewModel()
     val state by vm.state.collectAsStateWithLifecycle()
 
-    Scaffold(containerColor = AttendrBackground) { innerPadding ->
+    AttendrBackground(modifier = Modifier.fillMaxSize()) {
+    Scaffold(containerColor = Color.Transparent) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -308,6 +310,7 @@ fun AdminHomeScreen(navController: NavController) {
                 )
             }
         }
+    }
     }
 }
 
