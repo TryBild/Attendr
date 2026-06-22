@@ -8,10 +8,12 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.trybild.attendr.R
+import com.trybild.attendr.ui.components.AttendrBackground
 import com.trybild.attendr.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -39,8 +41,9 @@ internal fun LegalContentScreen(
     navController: NavController,
     sections: List<Pair<String, String>>
 ) {
+    AttendrBackground(modifier = Modifier.fillMaxSize()) {
     Scaffold(
-        containerColor = AttendrBackground,
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = { Text(title, style = MaterialTheme.typography.headlineMedium) },
@@ -49,7 +52,7 @@ internal fun LegalContentScreen(
                         Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = AttendrBackground)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         }
     ) { padding ->
@@ -69,5 +72,6 @@ internal fun LegalContentScreen(
                 Spacer(Modifier.height(20.dp))
             }
         }
+    }
     }
 }
