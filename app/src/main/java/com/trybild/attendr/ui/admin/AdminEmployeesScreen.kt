@@ -177,7 +177,13 @@ fun AdminEmployeesScreen(navController: NavController) {
                 )
             }
         ) {
-            EmployeeDetailSheet(emp = selectedEmployee!!)
+            EmployeeDetailSheet(
+                emp = selectedEmployee!!,
+                onResetDevice = {
+                    vm.resetDevice(selectedEmployee!!.id)
+                    selectedEmployee = selectedEmployee!!.copy(deviceBound = false)
+                }
+            )
         }
     }
 }
@@ -230,7 +236,7 @@ private fun EmployeeRow(emp: AdminEmployeeItem, onClick: () -> Unit) {
 }
 
 @Composable
-private fun EmployeeDetailSheet(emp: AdminEmployeeItem) {
+private fun EmployeeDetailSheet(emp: AdminEmployeeItem, onResetDevice: () -> Unit = {}) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -262,6 +268,10 @@ private fun EmployeeDetailSheet(emp: AdminEmployeeItem) {
                     if (emp.isVerified) {
                         StatusChip(label = "Verified", color = AttendrNavy)
                     }
+                    StatusChip(
+                        label = if (emp.deviceBound) "Device Bound" else "No Device",
+                        color = if (emp.deviceBound) AttendrSuccess else AttendrTextSecondary
+                    )
                 }
             }
         }
@@ -277,6 +287,20 @@ private fun EmployeeDetailSheet(emp: AdminEmployeeItem) {
         DetailRow(label = "Mobile", value = emp.mobile)
         DetailRow(label = "Joined",
             value = formatJoinDate(emp.joinedAt))
+
+        if (emp.deviceBound) {
+            Spacer(Modifier.height(16.dp))
+            OutlinedButton(
+                onClick = onResetDevice,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(10.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = AttendrError)
+            ) {
+                Icon(Icons.Default.PhonelinkErase, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Reset Device Binding")
+            }
+        }
     }
 }
 

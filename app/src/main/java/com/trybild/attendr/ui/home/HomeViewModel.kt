@@ -22,6 +22,7 @@ import com.trybild.attendr.data.model.GeofenceItem
 import com.trybild.attendr.data.model.MarkAttendanceBody
 import com.trybild.attendr.data.model.MyAttendanceRecord
 import com.trybild.attendr.data.repository.AuthRepository
+import com.trybild.attendr.utils.DeviceUtils
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -214,9 +215,10 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
                 val isMock = location?.let { isLocationMocked(it) } ?: _mockDetected.value
                 if (isMock) _mockDetected.value = true
                 val action = if (type == "in") "checkin" else "checkout"
+                val devId = DeviceUtils.getDeviceId(getApplication())
                 val res = api.markAttendance(
                     "Bearer $t",
-                    MarkAttendanceBody(action, location?.latitude, location?.longitude, isMock)
+                    MarkAttendanceBody(action, location?.latitude, location?.longitude, isMock, devId)
                 )
                 if (res.isSuccessful && res.body()?.ok == true) {
                     val time = res.body()?.time ?: ""
