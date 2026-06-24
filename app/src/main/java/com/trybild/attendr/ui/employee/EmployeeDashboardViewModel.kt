@@ -26,7 +26,8 @@ data class DashboardState(
     val workingHours: Double? = null,
     val summary: MyAttendanceSummary? = null,
     val weekData: List<EmployeeDayData> = emptyList(),
-    val loading: Boolean = false
+    val loading: Boolean = false,
+    val mockFlaggedCount: Int = 0
 )
 
 class EmployeeDashboardViewModel(app: Application) : AndroidViewModel(app) {
@@ -112,7 +113,8 @@ class EmployeeDashboardViewModel(app: Application) : AndroidViewModel(app) {
                         isWeekend = isWeekend
                     )
                 }
-                _state.update { it.copy(summary = body.summary, weekData = weekData, loading = false) }
+                val flagged = body.records?.count { it.mockDetected } ?: 0
+                _state.update { it.copy(summary = body.summary, weekData = weekData, loading = false, mockFlaggedCount = flagged) }
             } else {
                 _state.update { it.copy(loading = false) }
             }

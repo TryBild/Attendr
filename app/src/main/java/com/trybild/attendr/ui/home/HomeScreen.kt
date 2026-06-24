@@ -39,6 +39,7 @@ fun HomeScreen(
     val recent by vm.recent.collectAsState()
     val employeeName by vm.employeeName.collectAsState()
     val badge by vm.badge.collectAsState()
+    val isMockDetected by vm.mockDetected.collectAsState()
     var errorMsg by remember { mutableStateOf("") }
     var successMsg by remember { mutableStateOf("") }
     var locationGranted by remember { mutableStateOf(false) }
@@ -93,8 +94,19 @@ fun HomeScreen(
         }
         Spacer(Modifier.height(20.dp))
 
-        GeofenceBadgeChip(badge)
-        Spacer(Modifier.height(if (badge is GeofenceBadge.InsideZone || badge is GeofenceBadge.DistanceAway) 16.dp else 8.dp))
+        GeofenceBadgeChip(badge, isMockDetected = isMockDetected)
+        Spacer(Modifier.height(if (badge is GeofenceBadge.InsideZone || badge is GeofenceBadge.DistanceAway || isMockDetected) 16.dp else 8.dp))
+
+        if (isMockDetected) {
+            AttendrCard(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+                Text(
+                    "Fake GPS detected! Attendance will be marked but flagged for review.",
+                    modifier = Modifier.padding(12.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = AttendrError
+                )
+            }
+        }
 
         if (!locationGranted) {
             Button(onClick = {
