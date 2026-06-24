@@ -18,14 +18,24 @@ import com.trybild.attendr.ui.home.GeofenceBadge
 
 private val BadgeGreen = Color(0xFF16A34A)
 private val BadgeAmber = Color(0xFFD97706)
+private val BadgeRed = Color(0xFFDC2626)
 
 @Composable
-fun GeofenceBadgeChip(badge: GeofenceBadge, modifier: Modifier = Modifier) {
+fun GeofenceBadgeChip(badge: GeofenceBadge, modifier: Modifier = Modifier, isMockDetected: Boolean = false) {
+    if (isMockDetected) {
+        BadgeChip(text = "Fake GPS detected", color = BadgeRed, modifier = modifier)
+        return
+    }
     val (text, color) = when (badge) {
         is GeofenceBadge.InsideZone   -> "Inside office zone" to BadgeGreen
         is GeofenceBadge.DistanceAway -> "${badge.meters}m away from office" to BadgeAmber
         else -> return
     }
+    BadgeChip(text = text, color = color, modifier = modifier)
+}
+
+@Composable
+private fun BadgeChip(text: String, color: Color, modifier: Modifier = Modifier) {
     Surface(
         shape = RoundedCornerShape(50),
         color = color.copy(alpha = 0.10f),
