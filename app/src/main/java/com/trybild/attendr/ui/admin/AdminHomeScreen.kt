@@ -21,13 +21,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import android.widget.Toast
 import com.trybild.attendr.data.model.RecentActivityItem
 import com.trybild.attendr.ui.components.AttendrBackground
+import com.trybild.attendr.ui.components.MonthPickerDialog
 import com.trybild.attendr.ui.components.TrialBanner
 import com.trybild.attendr.ui.theme.*
 import java.text.SimpleDateFormat
@@ -47,6 +50,24 @@ private val AmberChipBg = Color(0xFFFFF3E0)
 fun AdminHomeScreen(navController: NavController) {
     val vm: AdminDashboardViewModel = viewModel()
     val state by vm.state.collectAsStateWithLifecycle()
+    var showMonthPicker by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        vm.toastMessage.collect { message ->
+            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    if (showMonthPicker) {
+        MonthPickerDialog(
+            onDismiss = { showMonthPicker = false },
+            onMonthSelected = { month ->
+                showMonthPicker = false
+                vm.downloadMusterRoll(month)
+            }
+        )
+    }
 
     AttendrBackground(modifier = Modifier.fillMaxSize()) {
     Scaffold(containerColor = Color.Transparent) { innerPadding ->
@@ -318,6 +339,12 @@ fun AdminHomeScreen(navController: NavController) {
                     title = "Attendance Records",
                     subtitle = "View attendance history",
                     onClick = { navController.navigate("admin_attendance") }
+                )
+                QuickActionCard(
+                    icon = Icons.Default.FileDownload,
+                    title = "Export Muster Roll",
+                    subtitle = if (state.exportLoading) "Downloading..." else "Download monthly CSV report",
+                    onClick = { if (!state.exportLoading) showMonthPicker = true }
                 )
             }
         }

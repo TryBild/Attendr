@@ -2,6 +2,8 @@ package com.trybild.attendr.ui.home
 
 import android.annotation.SuppressLint
 import android.app.Application
+import android.location.Location
+import android.os.Build
 import android.os.Looper
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -20,6 +22,7 @@ import com.trybild.attendr.data.model.GeofenceItem
 import com.trybild.attendr.data.model.MarkAttendanceBody
 import com.trybild.attendr.data.model.MyAttendanceRecord
 import com.trybild.attendr.data.repository.AuthRepository
+import com.trybild.attendr.utils.DeviceUtils
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -62,6 +65,9 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
 
     private val _badge = MutableStateFlow<GeofenceBadge>(GeofenceBadge.Loading)
     val badge: StateFlow<GeofenceBadge> = _badge
+
+    private val _mockDetected = MutableStateFlow(false)
+    val mockDetected: StateFlow<Boolean> = _mockDetected
 
     private var permissionGranted = false
     private var loadedGeofences: List<GeofenceItem> = emptyList()
@@ -159,6 +165,7 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         val cb = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
                 val loc = result.lastLocation ?: return
+                _mockDetected.value = isLocationMocked(loc)
                 updateBadge(loc.latitude, loc.longitude)
             }
         }
@@ -205,10 +212,13 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
                 val location = fusedLocation.getCurrentLocation(
                     Priority.PRIORITY_HIGH_ACCURACY, cts.token
                 ).await()
+                val isMock = location?.let { isLocationMocked(it) } ?: _mockDetected.value
+                if (isMock) _mockDetected.value = true
                 val action = if (type == "in") "checkin" else "checkout"
+                val devId = DeviceUtils.getDeviceId(getApplication())
                 val res = api.markAttendance(
                     "Bearer $t",
-                    MarkAttendanceBody(action, location?.latitude, location?.longitude)
+                    MarkAttendanceBody(action, location?.latitude, location?.longitude, isMock, devId)
                 )
                 if (res.isSuccessful && res.body()?.ok == true) {
                     val time = res.body()?.time ?: ""
@@ -230,6 +240,15 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun resetState() { _state.value = HomeState.Idle }
+
+    @Suppress("DEPRECATION")
+    private fun isLocationMocked(location: Location): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            location.isMock
+        } else {
+            location.isFromMockProvider
+        }
+    }
 
     override fun onCleared() {
         super.onCleared()

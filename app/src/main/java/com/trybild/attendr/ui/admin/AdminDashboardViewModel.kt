@@ -1,13 +1,18 @@
 package com.trybild.attendr.ui.admin
 
 import android.app.Application
+import android.content.ContentValues
+import android.os.Environment
+import android.provider.MediaStore
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.trybild.attendr.data.local.TokenDataStore
 import com.trybild.attendr.data.model.RecentActivityItem
 import com.trybild.attendr.data.repository.AuthRepository
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
@@ -37,6 +42,7 @@ data class AdminDashboardState(
     val weeklyData: List<WeeklyDayData> = emptyList(),
     val weeklyLoading: Boolean = true,
     val recentActivity: List<RecentActivityItem> = emptyList(),
+    val exportLoading: Boolean = false,
     val billingStatus: String = "",
     val trialDaysLeft: Int = 0
 )
@@ -47,6 +53,9 @@ class AdminDashboardViewModel(app: Application) : AndroidViewModel(app) {
 
     private val _state = MutableStateFlow(AdminDashboardState())
     val state: StateFlow<AdminDashboardState> = _state
+
+    private val _toastMessage = MutableSharedFlow<String>()
+    val toastMessage: SharedFlow<String> = _toastMessage
 
     init { load() }
 
@@ -132,6 +141,43 @@ class AdminDashboardViewModel(app: Application) : AndroidViewModel(app) {
         }
 
         _state.update { it.copy(weeklyData = result, weeklyLoading = false) }
+    }
+
+    fun downloadMusterRoll(month: String) {
+        _state.update { it.copy(exportLoading = true) }
+        viewModelScope.launch {
+            val result = repo.downloadMusterRollCsv(month)
+            if (result.isSuccess) {
+                val bytes = result.getOrNull()!!
+                val fileName = "muster_roll_${month.replace("-", "_")}.csv"
+                val saved = saveCsvToDownloads(fileName, bytes)
+                _state.update { it.copy(exportLoading = false) }
+                _toastMessage.emit(
+                    if (saved) "Muster roll saved to Downloads/$fileName"
+                    else "Failed to save file"
+                )
+            } else {
+                _state.update { it.copy(exportLoading = false) }
+                _toastMessage.emit(result.exceptionOrNull()?.message ?: "Download failed")
+            }
+        }
+    }
+
+    private fun saveCsvToDownloads(fileName: String, data: ByteArray): Boolean {
+        return try {
+            val resolver = getApplication<Application>().contentResolver
+            val values = ContentValues().apply {
+                put(MediaStore.Downloads.DISPLAY_NAME, fileName)
+                put(MediaStore.Downloads.MIME_TYPE, "text/csv")
+                put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+            }
+            val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+                ?: return false
+            resolver.openOutputStream(uri)?.use { it.write(data) }
+            true
+        } catch (e: Exception) {
+            false
+        }
     }
 
     fun logout(onDone: () -> Unit) {

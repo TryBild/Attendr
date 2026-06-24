@@ -1,4 +1,5 @@
-import { Employee, Attendance } from "../models/index.js";
+import { Company, Employee, Attendance } from "../models/index.js";
+import { buildMusterRollGrid } from "../utils/csvBuilder.js";
 import { err } from "../utils/response.js";
 
 function daysInMonth(year, month) {
@@ -38,7 +39,7 @@ export async function getMonthCsv(req, res) {
     const recordMap = {};
     for (const r of records) {
       const key = `${r.employee}_${r.date}`;
-      recordMap[key] = r.status;
+      recordMap[key] = r;
     }
 
     // Build CSV headers
@@ -50,18 +51,21 @@ export async function getMonthCsv(req, res) {
     const headers = [
       "Employee Code", "Full Name", "Department",
       ...dayHeaders,
-      "Present Days", "Absent Days", "Late Days", "Attendance %",
+      "Present Days", "Absent Days", "Late Days", "Mock GPS Days", "Attendance %",
     ];
 
     const rows = employees.map((emp) => {
-      let present = 0, absent = 0, late = 0, leaves = 0;
+      let present = 0, absent = 0, late = 0, leaves = 0, mockDays = 0;
       const dayCells = [];
 
       for (let d = 1; d <= days; d++) {
         const dateStr = `${year}-${padMonth}-${String(d).padStart(2, "0")}`;
         const key = `${emp._id}_${dateStr}`;
-        const status = recordMap[key];
+        const rec = recordMap[key];
+        const status = rec?.status;
         const weekend = isWeekend(year, month, d);
+
+        if (rec?.mockDetected) mockDays++;
 
         if (weekend) {
           dayCells.push("—");
@@ -99,6 +103,7 @@ export async function getMonthCsv(req, res) {
         present,
         absent,
         late,
+        mockDays,
         `${pct}%`,
       ];
     });
@@ -140,19 +145,22 @@ export async function getMonthJson(req, res) {
     const recordMap = {};
     for (const r of records) {
       const key = `${r.employee}_${r.date}`;
-      recordMap[key] = r.status;
+      recordMap[key] = r;
     }
 
     const rows = employees.map((emp) => {
-      let present = 0, absent = 0, late = 0;
+      let present = 0, absent = 0, late = 0, mockDays = 0;
       const days_ = [];
 
       for (let d = 1; d <= days; d++) {
         const dateStr = `${year}-${padMonth}-${String(d).padStart(2, "0")}`;
         const key = `${emp._id}_${dateStr}`;
-        const status = recordMap[key];
+        const rec = recordMap[key];
+        const status = rec?.status;
         const weekend = isWeekend(year, month, d);
         let cell;
+
+        if (rec?.mockDetected) mockDays++;
 
         if (weekend) cell = "WE";
         else if (!status) { cell = "A"; absent++; }
@@ -177,11 +185,48 @@ export async function getMonthJson(req, res) {
         present,
         absent,
         late,
+        mockDays,
         attendancePct: pct,
       };
     });
 
     return res.json({ ok: true, month: monthParam, days, rows });
+  } catch (e) {
+    console.error(e);
+    err(res, e.message);
+  }
+}
+
+// GET /api/reports/register/month.csv?month=2026-06
+export async function getMusterRollCsv(req, res) {
+  try {
+    const companyId = req.auth.companyId;
+    const monthParam = req.query.month || new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }).slice(0, 7);
+    const [year, month] = monthParam.split("-").map(Number);
+    const days = daysInMonth(year, month);
+
+    const [company, employees, records] = await Promise.all([
+      Company.findById(companyId).lean(),
+      Employee.find({ company: companyId, isActive: true })
+        .populate("department", "name")
+        .sort({ fullName: 1 }),
+      Attendance.find({
+        company: companyId,
+        date: {
+          $gte: `${year}-${String(month).padStart(2, "0")}-01`,
+          $lte: `${year}-${String(month).padStart(2, "0")}-${days}`,
+        },
+      }),
+    ]);
+
+    if (!company) return err(res, "Company not found", 404);
+
+    const csv = buildMusterRollGrid(employees, records, year, month, company);
+    const mn = monthName(month);
+
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="muster_roll_${year}_${String(month).padStart(2, "0")}.csv"`);
+    return res.send(csv);
   } catch (e) {
     console.error(e);
     err(res, e.message);

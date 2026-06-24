@@ -7,6 +7,7 @@ import { connectDB } from "./config/db.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { generalLimiter } from "./middleware/rateLimiter.js";
 import { startSubscriptionJob } from "./jobs/subscription.job.js";
+import { startDailyDigestJob } from "./jobs/dailyDigest.job.js";
 
 import authRoutes       from "./routes/auth.routes.js";
 import attendanceRoutes from "./routes/attendance.routes.js";
@@ -52,6 +53,7 @@ const PORT = process.env.PORT || 4000;
 connectDB(process.env.MONGO_URI || process.env.MONGODB_URI).then(() => {
   app.listen(PORT, () => console.log(`✓ Attendr API running on :${PORT}`));
   if (process.env.NODE_ENV === "production") {
+    startDailyDigestJob();
     startSubscriptionJob();
   }
 });

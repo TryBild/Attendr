@@ -58,6 +58,7 @@ export async function getDashboard(req, res) {
     const late    = todayRecords.filter((r) => r.status === "late").length;
     const absent  = totalEmployees - present;
     const attendancePercent = totalEmployees > 0 ? Math.round((present / totalEmployees) * 100) : 0;
+    const mockFlaggedCount = todayRecords.filter((r) => r.mockDetected === true).length;
 
     const recentActivity = todayRecords.slice(0, 10).map((r) => {
       const action = r.checkOutTime ? "checkout" : "checkin";
@@ -86,7 +87,7 @@ export async function getDashboard(req, res) {
 
     return res.json({
       ok: true,
-      today: { date, totalEmployees, present, absent, late, attendancePercent },
+      today: { date, totalEmployees, present, absent, late, attendancePercent, mockFlaggedCount },
       thisMonth: { avgAttendance, totalWorkingDays: daysSoFar },
       recentActivity,
     });
@@ -125,6 +126,7 @@ export async function getDayRegister(req, res) {
         checkOutTime: formatTime12(r?.checkOutTime),
         workingHours: r?.workingHours || null,
         late:         r?.status === "late",
+        mockDetected: r?.mockDetected || false,
       };
     });
 
@@ -144,7 +146,13 @@ export async function getEmployees(req, res) {
     const employees = await Employee.find({ company: req.auth.companyId })
       .populate("department", "name")
       .sort({ fullName: 1 });
-    return res.json({ ok: true, employees });
+    const mapped = employees.map((e) => {
+      const obj = e.toObject();
+      obj.deviceBound = !!e.deviceId;
+      delete obj.deviceId;
+      return obj;
+    });
+    return res.json({ ok: true, employees: mapped });
   } catch (e) {
     err(res, e.message);
   }
@@ -203,6 +211,19 @@ export async function deactivateEmployee(req, res) {
     emp.isActive = false;
     await emp.save();
     return res.json({ ok: true, message: "Employee deactivated." });
+  } catch (e) {
+    err(res, e.message);
+  }
+}
+
+// POST /api/admin/employees/:id/reset-device
+export async function resetDevice(req, res) {
+  try {
+    const emp = await Employee.findOne({ _id: req.params.id, company: req.auth.companyId });
+    if (!emp) return err(res, "Employee not found", 404);
+    emp.deviceId = null;
+    await emp.save();
+    return res.json({ ok: true, message: "Device binding reset. Employee can log in from a new device." });
   } catch (e) {
     err(res, e.message);
   }
