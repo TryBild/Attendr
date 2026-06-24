@@ -144,7 +144,13 @@ export async function getEmployees(req, res) {
     const employees = await Employee.find({ company: req.auth.companyId })
       .populate("department", "name")
       .sort({ fullName: 1 });
-    return res.json({ ok: true, employees });
+    const mapped = employees.map((e) => {
+      const obj = e.toObject();
+      obj.deviceBound = !!e.deviceId;
+      delete obj.deviceId;
+      return obj;
+    });
+    return res.json({ ok: true, employees: mapped });
   } catch (e) {
     err(res, e.message);
   }
@@ -203,6 +209,19 @@ export async function deactivateEmployee(req, res) {
     emp.isActive = false;
     await emp.save();
     return res.json({ ok: true, message: "Employee deactivated." });
+  } catch (e) {
+    err(res, e.message);
+  }
+}
+
+// POST /api/admin/employees/:id/reset-device
+export async function resetDevice(req, res) {
+  try {
+    const emp = await Employee.findOne({ _id: req.params.id, company: req.auth.companyId });
+    if (!emp) return err(res, "Employee not found", 404);
+    emp.deviceId = null;
+    await emp.save();
+    return res.json({ ok: true, message: "Device binding reset. Employee can log in from a new device." });
   } catch (e) {
     err(res, e.message);
   }

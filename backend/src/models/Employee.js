@@ -16,6 +16,7 @@ const employeeSchema = new mongoose.Schema({
   otpExpiry:     { type: Date },
   otpAttempts:   { type: Number, default: 0 },
   otpLockedUntil:{ type: Date },
+  deviceId:      { type: String, default: null, index: true },
 }, { timestamps: true });
 
 employeeSchema.index({ mobile: 1, company: 1 }, { unique: true });

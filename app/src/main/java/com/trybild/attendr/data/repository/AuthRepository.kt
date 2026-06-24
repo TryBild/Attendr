@@ -64,9 +64,9 @@ class AuthRepository(context: Context) {
         }
     }
 
-    suspend fun employeeLogin(mobile: String, teamId: String, password: String): Result<AuthResponse> {
+    suspend fun employeeLogin(mobile: String, teamId: String, password: String, deviceId: String? = null): Result<AuthResponse> {
         return try {
-            val res = api.employeeLogin(EmployeeLoginRequest(mobile, teamId, password))
+            val res = api.employeeLogin(EmployeeLoginRequest(mobile, teamId, password, deviceId))
             if (res.isSuccessful && res.body()?.ok == true) {
                 val body = res.body()!!
                 body.token?.let { dataStore.saveToken(it) }
@@ -214,6 +214,21 @@ class AuthRepository(context: Context) {
                 Result.success(res.body()!!)
             } else {
                 Result.failure(Exception(res.body()?.error ?: "Could not fetch geofences"))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception(e.message ?: "Network error"))
+        }
+    }
+
+    suspend fun resetDevice(employeeId: String): Result<GenericResponse> {
+        return try {
+            val token = dataStore.token.firstOrNull()
+                ?: return Result.failure(Exception("Not logged in"))
+            val res = api.resetDevice("Bearer $token", employeeId)
+            if (res.isSuccessful && res.body()?.ok == true) {
+                Result.success(res.body()!!)
+            } else {
+                Result.failure(Exception(res.body()?.error ?: "Could not reset device"))
             }
         } catch (e: Exception) {
             Result.failure(Exception(e.message ?: "Network error"))

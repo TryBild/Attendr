@@ -1,4 +1,4 @@
-import { Attendance, Geofence } from "../models/index.js";
+import { Attendance, Employee, Geofence } from "../models/index.js";
 import { findMatchingGeofence, haversineDistance } from "../utils/geo.js";
 import { err } from "../utils/response.js";
 
@@ -19,11 +19,18 @@ function formatTime(date) {
 // POST /api/attendance/mark
 export async function markAttendance(req, res) {
   try {
-    const { latitude, longitude, action } = req.body;
+    const { latitude, longitude, action, deviceId } = req.body;
     if (!["checkin", "checkout"].includes(action))
       return err(res, "action must be checkin or checkout", 400);
     if (typeof latitude !== "number" || typeof longitude !== "number")
       return err(res, "latitude and longitude are required", 400);
+
+    if (deviceId) {
+      const emp = await Employee.findById(req.auth.id, "deviceId");
+      if (emp?.deviceId && emp.deviceId !== deviceId) {
+        return err(res, "This device is not registered for your account. Contact your admin.", 403);
+      }
+    }
 
     const geofences = await Geofence.find({ company: req.auth.companyId, isActive: true });
     const match = findMatchingGeofence(latitude, longitude, geofences);
