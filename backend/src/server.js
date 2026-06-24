@@ -12,6 +12,7 @@ import attendanceRoutes from "./routes/attendance.routes.js";
 import adminRoutes      from "./routes/admin.routes.js";
 import reportsRoutes    from "./routes/reports.routes.js";
 import supportRoutes    from "./routes/support.routes.js";
+import { startDailyDigestJob } from "./jobs/dailyDigest.job.js";
 
 const app = express();
 app.set('trust proxy', 1);
@@ -41,6 +42,9 @@ app.use("/api/support",    supportRoutes);
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 4000;
-connectDB(process.env.MONGO_URI || process.env.MONGODB_URI).then(() =>
-  app.listen(PORT, () => console.log(`✓ Attendr API running on :${PORT}`))
-);
+connectDB(process.env.MONGO_URI || process.env.MONGODB_URI).then(() => {
+  app.listen(PORT, () => console.log(`✓ Attendr API running on :${PORT}`));
+  if (process.env.NODE_ENV === "production") {
+    startDailyDigestJob();
+  }
+});
