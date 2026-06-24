@@ -75,4 +75,10 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Query("month") month: String
     ): Response<okhttp3.ResponseBody>
+
+    @POST("admin/employees/{id}/reset-device")
+    suspend fun resetDevice(
+        @Header("Authorization") token: String,
+        @Path("id") employeeId: String
+    ): Response<GenericResponse>
 }
