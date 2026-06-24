@@ -68,4 +68,11 @@ interface ApiService {
     suspend fun getGeofences(
         @Header("Authorization") token: String
     ): Response<GeofencesResponse>
+
+    @GET("reports/register/month.csv")
+    @Streaming
+    suspend fun getMusterRollCsv(
+        @Header("Authorization") token: String,
+        @Query("month") month: String
+    ): Response<okhttp3.ResponseBody>
 }
