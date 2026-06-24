@@ -22,6 +22,7 @@ import androidx.navigation.NavController
 import com.trybild.attendr.ui.components.GeofenceBadgeChip
 import com.trybild.attendr.ui.home.GeofenceBadge
 import com.trybild.attendr.ui.myattendance.EmployeeDayData
+import kotlinx.coroutines.flow.MutableStateFlow
 import com.trybild.attendr.ui.theme.*
 import com.trybild.attendr.utils.formatDuration
 import com.trybild.attendr.utils.formatIsoTime
@@ -40,11 +41,13 @@ private val LeaveBlue     = Color(0xFF1565C0)
 @Composable
 fun EmployeeDashboardScreen(
     innerNav: NavController,
-    badge: StateFlow<GeofenceBadge>
+    badge: StateFlow<GeofenceBadge>,
+    mockDetected: StateFlow<Boolean> = MutableStateFlow(false)
 ) {
     val vm: EmployeeDashboardViewModel = viewModel()
     val state by vm.state.collectAsStateWithLifecycle()
     val badgeValue by badge.collectAsStateWithLifecycle(initialValue = GeofenceBadge.Loading)
+    val isMockDetected by mockDetected.collectAsStateWithLifecycle(initialValue = false)
 
     // Refresh today's status whenever Dashboard tab is shown
     LaunchedEffect(Unit) { vm.refresh() }
@@ -89,7 +92,7 @@ fun EmployeeDashboardScreen(
         )
 
         Spacer(Modifier.height(12.dp))
-        GeofenceBadgeChip(badgeValue)
+        GeofenceBadgeChip(badgeValue, isMockDetected = isMockDetected)
         Spacer(Modifier.height(20.dp))
 
         // ── Today's status card ───────────────────────────────────────────────
@@ -187,6 +190,20 @@ fun EmployeeDashboardScreen(
                         MonthlyStat("Absent",   "${summary.absent}",            AbsentRed,    Modifier.weight(1f))
                         MonthlyStat("Late",     "${summary.late}",              HolidayOrange, Modifier.weight(1f))
                         MonthlyStat("Attnd %",  "${summary.attendancePercent}%", AttendrNavy,  Modifier.weight(1f))
+                    }
+                    if (state.mockFlaggedCount > 0) {
+                        Spacer(Modifier.height(8.dp))
+                        Surface(
+                            shape = RoundedCornerShape(50),
+                            color = AbsentRed.copy(alpha = 0.12f)
+                        ) {
+                            Text(
+                                "${state.mockFlaggedCount} flagged (fake GPS)",
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                                color = AbsentRed
+                            )
+                        }
                     }
                 }
             }

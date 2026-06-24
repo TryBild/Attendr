@@ -39,7 +39,7 @@ export async function getMonthCsv(req, res) {
     const recordMap = {};
     for (const r of records) {
       const key = `${r.employee}_${r.date}`;
-      recordMap[key] = r.status;
+      recordMap[key] = r;
     }
 
     // Build CSV headers
@@ -51,18 +51,21 @@ export async function getMonthCsv(req, res) {
     const headers = [
       "Employee Code", "Full Name", "Department",
       ...dayHeaders,
-      "Present Days", "Absent Days", "Late Days", "Attendance %",
+      "Present Days", "Absent Days", "Late Days", "Mock GPS Days", "Attendance %",
     ];
 
     const rows = employees.map((emp) => {
-      let present = 0, absent = 0, late = 0, leaves = 0;
+      let present = 0, absent = 0, late = 0, leaves = 0, mockDays = 0;
       const dayCells = [];
 
       for (let d = 1; d <= days; d++) {
         const dateStr = `${year}-${padMonth}-${String(d).padStart(2, "0")}`;
         const key = `${emp._id}_${dateStr}`;
-        const status = recordMap[key];
+        const rec = recordMap[key];
+        const status = rec?.status;
         const weekend = isWeekend(year, month, d);
+
+        if (rec?.mockDetected) mockDays++;
 
         if (weekend) {
           dayCells.push("—");
@@ -100,6 +103,7 @@ export async function getMonthCsv(req, res) {
         present,
         absent,
         late,
+        mockDays,
         `${pct}%`,
       ];
     });
@@ -141,19 +145,22 @@ export async function getMonthJson(req, res) {
     const recordMap = {};
     for (const r of records) {
       const key = `${r.employee}_${r.date}`;
-      recordMap[key] = r.status;
+      recordMap[key] = r;
     }
 
     const rows = employees.map((emp) => {
-      let present = 0, absent = 0, late = 0;
+      let present = 0, absent = 0, late = 0, mockDays = 0;
       const days_ = [];
 
       for (let d = 1; d <= days; d++) {
         const dateStr = `${year}-${padMonth}-${String(d).padStart(2, "0")}`;
         const key = `${emp._id}_${dateStr}`;
-        const status = recordMap[key];
+        const rec = recordMap[key];
+        const status = rec?.status;
         const weekend = isWeekend(year, month, d);
         let cell;
+
+        if (rec?.mockDetected) mockDays++;
 
         if (weekend) cell = "WE";
         else if (!status) { cell = "A"; absent++; }
@@ -178,6 +185,7 @@ export async function getMonthJson(req, res) {
         present,
         absent,
         late,
+        mockDays,
         attendancePct: pct,
       };
     });
