@@ -171,3 +171,22 @@ data class GeofencesResponse(
     val geofences: List<GeofenceItem>?,
     val error: String?
 )
+
+// Billing
+data class BillingStatusResponse(
+    val ok: Boolean,
+    val plan: String?,
+    val status: String?,
+    val trialDaysLeft: Int = 0,
+    val trialEndsAt: String?,
+    val renewsAt: String?,
+    val razorpaySubscriptionId: String?,
+    val error: String?
+)
+data class CreateSubscriptionResponse(
+    val ok: Boolean,
+    val subscriptionId: String?,
+    val shortUrl: String?,
+    val razorpayKeyId: String?,
+    val error: String?
+)

@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import { Company, Department, Employee, Geofence } from "../models/index.js";
+import { Company, Department, Employee, Geofence, Subscription } from "../models/index.js";
 import { sendOTP } from "../services/otpService.js";
 import { signToken } from "../middleware/auth.js";
 import { err } from "../utils/response.js";
@@ -351,6 +351,13 @@ export async function adminRegister(req, res) {
     });
 
     await Department.create({ company: company._id, name: "General" });
+
+    await Subscription.create({
+      company: company._id,
+      plan: "free",
+      status: "trialing",
+      trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+    });
 
     const token = signToken({
       id:        company._id,

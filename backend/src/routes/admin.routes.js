@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth.js";
+import { requireActiveSubscription } from "../middleware/subscriptionCheck.js";
 import {
   getDashboard,
   getDayRegister,
@@ -11,6 +12,7 @@ import {
 
 const router = Router();
 router.use(requireAuth(["admin"]));
+router.use(requireActiveSubscription);
 
 router.get("/dashboard",             getDashboard);
 router.get("/attendance/day",        getDayRegister);
