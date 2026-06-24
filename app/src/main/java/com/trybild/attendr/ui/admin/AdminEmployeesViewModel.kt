@@ -40,6 +40,19 @@ class AdminEmployeesViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun resetDevice(employeeId: String) {
+        viewModelScope.launch {
+            val result = repo.resetDevice(employeeId)
+            if (result.isSuccess) {
+                val updated = _state.value.employees.map {
+                    if (it.id == employeeId) it.copy(deviceBound = false) else it
+                }
+                _state.update { it.copy(employees = updated, filtered = updated) }
+                onQuery(_state.value.query)
+            }
+        }
+    }
+
     fun onQuery(q: String) {
         val all = _state.value.employees
         val filtered = if (q.isBlank()) all else all.filter {

@@ -158,7 +158,7 @@ export async function verifyOTP(req, res) {
 // POST /api/auth/employee/set-password
 export async function employeeSetPassword(req, res) {
   try {
-    const { pendingToken, password, confirmPassword } = req.body;
+    const { pendingToken, password, confirmPassword, deviceId } = req.body;
     if (!pendingToken || !password || !confirmPassword)
       return err(res, "pendingToken, password, and confirmPassword are required", 400);
     if (password !== confirmPassword)
@@ -183,6 +183,7 @@ export async function employeeSetPassword(req, res) {
     employee.passwordHash = await bcrypt.hash(password, 12);
     employee.isVerified = true;
     employee.lastLogin = new Date();
+    if (deviceId) employee.deviceId = deviceId;
     await employee.save();
 
     const token = signToken({
@@ -206,7 +207,7 @@ export async function employeeSetPassword(req, res) {
 // POST /api/auth/employee/login
 export async function employeeLogin(req, res) {
   try {
-    const { mobile, teamId, password } = req.body;
+    const { mobile, teamId, password, deviceId } = req.body;
     if (!mobile || !teamId || !password)
       return err(res, "mobile, teamId, and password are required", 400);
 
@@ -224,6 +225,14 @@ export async function employeeLogin(req, res) {
 
     const valid = await bcrypt.compare(password, employee.passwordHash);
     if (!valid) return err(res, "Invalid credentials.", 401);
+
+    if (deviceId) {
+      if (!employee.deviceId) {
+        employee.deviceId = deviceId;
+      } else if (employee.deviceId !== deviceId) {
+        return err(res, "This account is bound to another device. Contact your admin to reset.", 403);
+      }
+    }
 
     employee.lastLogin = new Date();
     await employee.save();
