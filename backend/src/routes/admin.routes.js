@@ -3,7 +3,7 @@ import { requireAuth } from "../middleware/auth.js";
 import {
   getDashboard,
   getDayRegister,
-  getEmployees, addEmployee, updateEmployee, deactivateEmployee,
+  getEmployees, addEmployee, updateEmployee, deactivateEmployee, resetDevice,
   getDepartments, addDepartment, updateDepartment, deleteDepartment,
   getGeofences, addGeofence, updateGeofence, deleteGeofence,
   manualAttendance,
@@ -20,6 +20,7 @@ router.get("/employees",             getEmployees);
 router.post("/employees",            addEmployee);
 router.put("/employees/:id",         updateEmployee);
 router.delete("/employees/:id",      deactivateEmployee);
+router.post("/employees/:id/reset-device", resetDevice);
 
 router.get("/departments",           getDepartments);
 router.post("/departments",          addDepartment);

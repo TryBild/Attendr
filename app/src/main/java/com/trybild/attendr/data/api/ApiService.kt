@@ -68,4 +68,10 @@ interface ApiService {
     suspend fun getGeofences(
         @Header("Authorization") token: String
     ): Response<GeofencesResponse>
+
+    @POST("admin/employees/{id}/reset-device")
+    suspend fun resetDevice(
+        @Header("Authorization") token: String,
+        @Path("id") employeeId: String
+    ): Response<GenericResponse>
 }
