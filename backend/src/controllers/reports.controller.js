@@ -1,4 +1,5 @@
-import { Employee, Attendance } from "../models/index.js";
+import { Company, Employee, Attendance } from "../models/index.js";
+import { buildMusterRollGrid } from "../utils/csvBuilder.js";
 import { err } from "../utils/response.js";
 
 function daysInMonth(year, month) {
@@ -182,6 +183,42 @@ export async function getMonthJson(req, res) {
     });
 
     return res.json({ ok: true, month: monthParam, days, rows });
+  } catch (e) {
+    console.error(e);
+    err(res, e.message);
+  }
+}
+
+// GET /api/reports/register/month.csv?month=2026-06
+export async function getMusterRollCsv(req, res) {
+  try {
+    const companyId = req.auth.companyId;
+    const monthParam = req.query.month || new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }).slice(0, 7);
+    const [year, month] = monthParam.split("-").map(Number);
+    const days = daysInMonth(year, month);
+
+    const [company, employees, records] = await Promise.all([
+      Company.findById(companyId).lean(),
+      Employee.find({ company: companyId, isActive: true })
+        .populate("department", "name")
+        .sort({ fullName: 1 }),
+      Attendance.find({
+        company: companyId,
+        date: {
+          $gte: `${year}-${String(month).padStart(2, "0")}-01`,
+          $lte: `${year}-${String(month).padStart(2, "0")}-${days}`,
+        },
+      }),
+    ]);
+
+    if (!company) return err(res, "Company not found", 404);
+
+    const csv = buildMusterRollGrid(employees, records, year, month, company);
+    const mn = monthName(month);
+
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="muster_roll_${year}_${String(month).padStart(2, "0")}.csv"`);
+    return res.send(csv);
   } catch (e) {
     console.error(e);
     err(res, e.message);
