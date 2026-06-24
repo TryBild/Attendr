@@ -58,6 +58,7 @@ export async function getDashboard(req, res) {
     const late    = todayRecords.filter((r) => r.status === "late").length;
     const absent  = totalEmployees - present;
     const attendancePercent = totalEmployees > 0 ? Math.round((present / totalEmployees) * 100) : 0;
+    const mockFlaggedCount = todayRecords.filter((r) => r.mockDetected === true).length;
 
     const recentActivity = todayRecords.slice(0, 10).map((r) => {
       const action = r.checkOutTime ? "checkout" : "checkin";
@@ -86,7 +87,7 @@ export async function getDashboard(req, res) {
 
     return res.json({
       ok: true,
-      today: { date, totalEmployees, present, absent, late, attendancePercent },
+      today: { date, totalEmployees, present, absent, late, attendancePercent, mockFlaggedCount },
       thisMonth: { avgAttendance, totalWorkingDays: daysSoFar },
       recentActivity,
     });
@@ -125,6 +126,7 @@ export async function getDayRegister(req, res) {
         checkOutTime: formatTime12(r?.checkOutTime),
         workingHours: r?.workingHours || null,
         late:         r?.status === "late",
+        mockDetected: r?.mockDetected || false,
       };
     });
 

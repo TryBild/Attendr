@@ -19,7 +19,7 @@ function formatTime(date) {
 // POST /api/attendance/mark
 export async function markAttendance(req, res) {
   try {
-    const { latitude, longitude, action, deviceId } = req.body;
+    const { latitude, longitude, action, mockDetected, deviceId } = req.body;
     if (!["checkin", "checkout"].includes(action))
       return err(res, "action must be checkin or checkout", 400);
     if (typeof latitude !== "number" || typeof longitude !== "number")
@@ -61,6 +61,7 @@ export async function markAttendance(req, res) {
         checkInTime:     now,
         checkInLocation: { latitude, longitude },
         status: "present",
+        mockDetected: mockDetected === true,
       });
 
       return res.json({
@@ -85,6 +86,7 @@ export async function markAttendance(req, res) {
     record.checkOutTime = now;
     record.checkOutLocation = { latitude, longitude };
     record.workingHours = workingHours;
+    if (mockDetected === true) record.mockDetected = true;
     await record.save();
 
     return res.json({
@@ -120,6 +122,7 @@ export async function getTodayAttendance(req, res) {
       checkOutTime: record.checkOutTime,
       workingHours: record.workingHours,
       geofence:     record.geofence?.name || null,
+      mockDetected: record.mockDetected || false,
     });
   } catch (e) {
     console.error(e);
@@ -165,6 +168,7 @@ export async function getMyAttendance(req, res) {
         checkInTime:  r.checkInTime,
         checkOutTime: r.checkOutTime,
         workingHours: r.workingHours,
+        mockDetected: r.mockDetected || false,
       })),
       summary: { totalMarked, present, absent, late, leaves, workingDays, attendancePercent },
     });

@@ -220,6 +220,21 @@ class AuthRepository(context: Context) {
         }
     }
 
+    suspend fun downloadMusterRollCsv(month: String): Result<ByteArray> {
+        return try {
+            val token = dataStore.token.firstOrNull()
+                ?: return Result.failure(Exception("Not logged in"))
+            val res = api.getMusterRollCsv("Bearer $token", month)
+            if (res.isSuccessful && res.body() != null) {
+                Result.success(res.body()!!.bytes())
+            } else {
+                Result.failure(Exception("Could not download muster roll"))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception(e.message ?: "Network error"))
+        }
+    }
+
     suspend fun resetDevice(employeeId: String): Result<GenericResponse> {
         return try {
             val token = dataStore.token.firstOrNull()
