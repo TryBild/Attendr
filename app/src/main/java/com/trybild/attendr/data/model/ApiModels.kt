@@ -52,7 +52,7 @@ data class EmployeeProfile(
 data class AuthResponse(val ok: Boolean, val token: String?, val employee: EmployeeProfile?, val error: String?)
 // Body must match backend: const { latitude, longitude, action } = req.body
 // action values must be "checkin" or "checkout" (not "in"/"out")
-data class MarkAttendanceBody(val action: String, val latitude: Double?, val longitude: Double?, val deviceId: String? = null)
+data class MarkAttendanceBody(val action: String, val latitude: Double?, val longitude: Double?, val mockDetected: Boolean = false, val deviceId: String? = null)
 
 // Backend success: { ok, action, time, status, geofence, distance }
 data class AttendanceResponse(val ok: Boolean, val action: String?, val time: String?, val error: String?)
@@ -63,7 +63,8 @@ data class TodayAttendanceResponse(
     val status: String?,
     val checkInTime: String?,
     val checkOutTime: String?,
-    val workingHours: Double?
+    val workingHours: Double?,
+    val mockDetected: Boolean = false
 )
 
 // Constructed locally from TodayAttendanceResponse; type is "in" or "out"
@@ -76,7 +77,8 @@ data class DashboardTodayStats(
     val present: Int,
     val absent: Int,
     val late: Int,
-    val attendancePercent: Int
+    val attendancePercent: Int,
+    val mockFlaggedCount: Int = 0
 )
 data class DashboardMonthStats(val avgAttendance: Int, val totalWorkingDays: Int)
 data class RecentActivityItem(
@@ -125,7 +127,8 @@ data class DayRegisterRow(
     val checkInTime: String?,
     val checkOutTime: String?,
     val workingHours: Double?,
-    val late: Boolean
+    val late: Boolean,
+    val mockDetected: Boolean = false
 )
 data class DayRegisterResponse(
     val ok: Boolean,
@@ -142,7 +145,8 @@ data class MyAttendanceRecord(
     val status: String,
     val checkInTime: String?,
     val checkOutTime: String?,
-    val workingHours: Double?
+    val workingHours: Double?,
+    val mockDetected: Boolean = false
 )
 data class MyAttendanceSummary(
     val totalMarked: Int,

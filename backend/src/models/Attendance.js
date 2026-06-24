@@ -15,6 +15,7 @@ const attendanceSchema = new mongoose.Schema({
     default: "present",
   },
   isManualEntry: { type: Boolean, default: false },
+  mockDetected:  { type: Boolean, default: false },
   notes:         { type: String },
   workingHours:  { type: Number },
 }, { timestamps: true });

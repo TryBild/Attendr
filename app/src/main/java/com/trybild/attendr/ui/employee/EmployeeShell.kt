@@ -109,7 +109,8 @@ fun EmployeeShell(outerNavController: NavController) {
                 composable(EmployeeTab.DASHBOARD.route) {
                     EmployeeDashboardScreen(
                         innerNav = innerNav,
-                        badge = homeVm.badge
+                        badge = homeVm.badge,
+                        mockDetected = homeVm.mockDetected
                     )
                 }
                 composable(EmployeeTab.CALENDAR.route) {
