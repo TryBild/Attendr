@@ -31,6 +31,7 @@ import android.widget.Toast
 import com.trybild.attendr.data.model.RecentActivityItem
 import com.trybild.attendr.ui.components.AttendrBackground
 import com.trybild.attendr.ui.components.MonthPickerDialog
+import com.trybild.attendr.ui.components.TrialBanner
 import com.trybild.attendr.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -145,6 +146,16 @@ fun AdminHomeScreen(navController: NavController) {
                         )
                     }
                 }
+            }
+
+            // ── Trial banner ─────────────────────────────────────────────
+            if (state.billingStatus == "trialing" || state.billingStatus == "expired") {
+                TrialBanner(
+                    status = state.billingStatus,
+                    daysLeft = state.trialDaysLeft,
+                    onUpgradeClick = { navController.navigate("subscription") },
+                    modifier = Modifier.padding(horizontal = 24.dp).padding(bottom = 16.dp)
+                )
             }
 
             // ── 2. Today's Overview ───────────────────────────────────────

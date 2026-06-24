@@ -250,6 +250,36 @@ class AuthRepository(context: Context) {
         }
     }
 
+    suspend fun getBillingStatus(): Result<BillingStatusResponse> {
+        return try {
+            val token = dataStore.token.firstOrNull()
+                ?: return Result.failure(Exception("Not logged in"))
+            val res = api.getBillingStatus("Bearer $token")
+            if (res.isSuccessful && res.body()?.ok == true) {
+                Result.success(res.body()!!)
+            } else {
+                Result.failure(Exception(res.body()?.error ?: "Could not fetch billing status"))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception(e.message ?: "Network error"))
+        }
+    }
+
+    suspend fun createSubscription(): Result<CreateSubscriptionResponse> {
+        return try {
+            val token = dataStore.token.firstOrNull()
+                ?: return Result.failure(Exception("Not logged in"))
+            val res = api.createSubscription("Bearer $token")
+            if (res.isSuccessful && res.body()?.ok == true) {
+                Result.success(res.body()!!)
+            } else {
+                Result.failure(Exception(res.body()?.error ?: "Could not create subscription"))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception(e.message ?: "Network error"))
+        }
+    }
+
     suspend fun adminProfile(): Result<AdminProfileResponse> {
         return try {
             val token = dataStore.token.firstOrNull()
