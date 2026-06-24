@@ -42,7 +42,9 @@ data class AdminDashboardState(
     val weeklyData: List<WeeklyDayData> = emptyList(),
     val weeklyLoading: Boolean = true,
     val recentActivity: List<RecentActivityItem> = emptyList(),
-    val exportLoading: Boolean = false
+    val exportLoading: Boolean = false,
+    val billingStatus: String = "",
+    val trialDaysLeft: Int = 0
 )
 
 class AdminDashboardViewModel(app: Application) : AndroidViewModel(app) {
@@ -105,6 +107,15 @@ class AdminDashboardViewModel(app: Application) : AndroidViewModel(app) {
             }
 
             loadWeeklyData()
+            loadBilling()
+        }
+    }
+
+    private suspend fun loadBilling() {
+        val result = repo.getBillingStatus()
+        if (result.isSuccess) {
+            val b = result.getOrNull()!!
+            _state.update { it.copy(billingStatus = b.status ?: "", trialDaysLeft = b.trialDaysLeft) }
         }
     }
 

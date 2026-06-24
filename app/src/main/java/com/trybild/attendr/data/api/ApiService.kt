@@ -81,4 +81,19 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Path("id") employeeId: String
     ): Response<GenericResponse>
+
+    @GET("billing/status")
+    suspend fun getBillingStatus(
+        @Header("Authorization") token: String
+    ): Response<BillingStatusResponse>
+
+    @POST("billing/create-subscription")
+    suspend fun createSubscription(
+        @Header("Authorization") token: String
+    ): Response<CreateSubscriptionResponse>
+
+    @POST("billing/cancel")
+    suspend fun cancelSubscription(
+        @Header("Authorization") token: String
+    ): Response<GenericResponse>
 }
