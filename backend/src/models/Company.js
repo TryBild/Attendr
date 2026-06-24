@@ -21,6 +21,7 @@ const companySchema = new mongoose.Schema({
   workEndTime:   { type: String },
   timezone:      { type: String, default: "Asia/Kolkata" },
   referralSource:{ type: String },
+  holidays:      { type: [String], default: [] },
 }, { timestamps: true });
 
 export default mongoose.model("Company", companySchema);
