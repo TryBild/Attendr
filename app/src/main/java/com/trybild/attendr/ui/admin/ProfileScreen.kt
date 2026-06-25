@@ -11,6 +11,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.*
@@ -310,7 +311,60 @@ fun ProfileScreen(navController: NavController) {
             HorizontalDivider(color = AttendrDivider)
             Spacer(Modifier.height(16.dp))
 
-            // ── Section 4: App info + logout ──────────────────────────────
+            // ── Section 4: Geofence locations ────────────────────────────
+            SectionHeader("Geofence Locations")
+
+            if (state.geofences.isEmpty()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = AttendrSurface),
+                    elevation = CardDefaults.cardElevation(2.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(Icons.Default.LocationOn, contentDescription = null, tint = AttendrTextSecondary, modifier = Modifier.size(32.dp))
+                        Spacer(Modifier.height(8.dp))
+                        Text("No geofence set", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium), color = AttendrTextPrimary)
+                        Text("Add a location for attendance tracking.", style = MaterialTheme.typography.bodySmall, color = AttendrTextSecondary)
+                    }
+                }
+            } else {
+                state.geofences.forEach { gf ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = AttendrSurface),
+                        elevation = CardDefaults.cardElevation(2.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Icon(Icons.Default.LocationOn, contentDescription = null, tint = AttendrNavy, modifier = Modifier.size(24.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(gf.name, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold), color = AttendrTextPrimary)
+                                Text("${gf.latitude}, ${gf.longitude} (${gf.radiusMeters.toInt()}m)", style = MaterialTheme.typography.bodySmall, color = AttendrTextSecondary)
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(12.dp))
+            AttendrButton(
+                text = "Manage Geofences",
+                onClick = { navController.navigate("admin_geofences") }
+            )
+
+            Spacer(Modifier.height(28.dp))
+            HorizontalDivider(color = AttendrDivider)
+            Spacer(Modifier.height(16.dp))
+
+            // ── Section 5: App info + logout ──────────────────────────────
             SectionHeader("About")
             Row(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),

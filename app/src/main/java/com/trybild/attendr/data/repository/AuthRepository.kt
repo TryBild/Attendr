@@ -250,6 +250,66 @@ class AuthRepository(context: Context) {
         }
     }
 
+    suspend fun getAdminGeofences(): Result<GeofencesResponse> {
+        return try {
+            val token = dataStore.token.firstOrNull()
+                ?: return Result.failure(Exception("Not logged in"))
+            val res = api.getAdminGeofences("Bearer $token")
+            if (res.isSuccessful && res.body()?.ok == true) {
+                Result.success(res.body()!!)
+            } else {
+                Result.failure(Exception(res.body()?.error ?: "Could not fetch geofences"))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception(e.message ?: "Network error"))
+        }
+    }
+
+    suspend fun createGeofence(body: GeofenceCreateRequest): Result<GeofenceSingleResponse> {
+        return try {
+            val token = dataStore.token.firstOrNull()
+                ?: return Result.failure(Exception("Not logged in"))
+            val res = api.createGeofence("Bearer $token", body)
+            if (res.isSuccessful && res.body()?.ok == true) {
+                Result.success(res.body()!!)
+            } else {
+                Result.failure(Exception(res.body()?.error ?: "Could not create geofence"))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception(e.message ?: "Network error"))
+        }
+    }
+
+    suspend fun updateGeofence(id: String, body: GeofenceCreateRequest): Result<GeofenceSingleResponse> {
+        return try {
+            val token = dataStore.token.firstOrNull()
+                ?: return Result.failure(Exception("Not logged in"))
+            val res = api.updateGeofence("Bearer $token", id, body)
+            if (res.isSuccessful && res.body()?.ok == true) {
+                Result.success(res.body()!!)
+            } else {
+                Result.failure(Exception(res.body()?.error ?: "Could not update geofence"))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception(e.message ?: "Network error"))
+        }
+    }
+
+    suspend fun deleteGeofence(id: String): Result<GenericResponse> {
+        return try {
+            val token = dataStore.token.firstOrNull()
+                ?: return Result.failure(Exception("Not logged in"))
+            val res = api.deleteGeofence("Bearer $token", id)
+            if (res.isSuccessful) {
+                Result.success(GenericResponse(ok = true, message = "Deleted", error = null))
+            } else {
+                Result.failure(Exception("Could not delete geofence"))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception(e.message ?: "Network error"))
+        }
+    }
+
     suspend fun getBillingStatus(): Result<BillingStatusResponse> {
         return try {
             val token = dataStore.token.firstOrNull()
