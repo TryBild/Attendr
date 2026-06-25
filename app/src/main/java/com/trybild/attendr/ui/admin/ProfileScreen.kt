@@ -347,7 +347,7 @@ fun ProfileScreen(navController: NavController) {
                             Icon(Icons.Default.LocationOn, contentDescription = null, tint = AttendrNavy, modifier = Modifier.size(24.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(gf.name, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold), color = AttendrTextPrimary)
-                                Text("${gf.latitude}, ${gf.longitude} (${gf.radiusMeters.toInt()}m)", style = MaterialTheme.typography.bodySmall, color = AttendrTextSecondary)
+                                Text("Radius: ${gf.radiusMeters.toInt()}m", style = MaterialTheme.typography.bodySmall, color = AttendrTextSecondary)
                             }
                         }
                     }
