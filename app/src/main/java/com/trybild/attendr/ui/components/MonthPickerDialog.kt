@@ -45,7 +45,6 @@ fun MonthPickerDialog(
         Card(
             shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(containerColor = GlassSurface),
-            border = CardDefaults.outlinedCardBorder().copy(brush = null),
             modifier = Modifier
                 .fillMaxWidth()
                 .border(1.dp, GlassBorder, RoundedCornerShape(20.dp))
