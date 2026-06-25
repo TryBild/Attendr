@@ -43,12 +43,11 @@ fun MonthPickerDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
-            shape = RoundedCornerShape(20.dp),
+            shape = RoundedCornerShape(size = 20.dp),
             colors = CardDefaults.cardColors(containerColor = GlassSurface),
-            border = CardDefaults.outlinedCardBorder().copy(brush = null),
             modifier = Modifier
                 .fillMaxWidth()
-                .border(1.dp, GlassBorder, RoundedCornerShape(20.dp))
+                .border(width = 1.dp, color = GlassBorder, shape = RoundedCornerShape(size = 20.dp))
         ) {
             Column(
                 modifier = Modifier.padding(20.dp),
@@ -81,7 +80,7 @@ fun MonthPickerDialog(
                             Icons.Default.ChevronRight,
                             "Next year",
                             tint = if (selectedYear < currentYear) AttendrNavy
-                                   else AttendrTextSecondary.copy(alpha = 0.3f)
+                            else AttendrTextSecondary.copy(alpha = 0.3f)
                         )
                     }
                 }
@@ -94,7 +93,7 @@ fun MonthPickerDialog(
                 ) {
                     items(MONTHS.size) { index ->
                         val isFuture = selectedYear == currentYear && index > currentMonth
-                        val isSelected = index == selectedMonth && selectedYear == selectedYear
+                        val isSelected = index == selectedMonth
                         Box(
                             contentAlignment = Alignment.Center,
                             modifier = Modifier
