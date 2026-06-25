@@ -1,6 +1,7 @@
 package com.trybild.attendr.ui.admin
 
 import android.annotation.SuppressLint
+import android.content.pm.PackageManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -15,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.google.android.gms.location.LocationServices
@@ -24,11 +26,24 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.tasks.CancellationTokenSource
 import com.google.maps.android.compose.*
+import com.trybild.attendr.ui.components.AttendrBackground
 import com.trybild.attendr.ui.components.AttendrButton
 import com.trybild.attendr.ui.components.AttendrTextField
 import com.trybild.attendr.ui.theme.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+
+fun isMapsApiKeyValid(context: android.content.Context): Boolean {
+    return try {
+        val appInfo = context.packageManager.getApplicationInfo(
+            context.packageName, PackageManager.GET_META_DATA
+        )
+        val key = appInfo.metaData?.getString("com.google.android.geo.API_KEY")
+        !key.isNullOrBlank() && key != "PLACEHOLDER_KEY"
+    } catch (_: Exception) {
+        false
+    }
+}
 
 @SuppressLint("MissingPermission")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,6 +58,12 @@ fun GeofenceMapPickerScreen(
     vm: AdminGeofencesViewModel
 ) {
     val context = LocalContext.current
+
+    if (!isMapsApiKeyValid(context)) {
+        MapsNotConfiguredScreen(onBack = { navController.navigateUp() })
+        return
+    }
+
     val scope = rememberCoroutineScope()
     val fusedLocation = remember { LocationServices.getFusedLocationProviderClient(context) }
 
@@ -56,7 +77,7 @@ fun GeofenceMapPickerScreen(
     var name by remember { mutableStateOf(initialName ?: "") }
     var radius by remember { mutableFloatStateOf(initialRadius ?: 100f) }
     var saving by remember { mutableStateOf(false) }
-    var locationLoaded by remember { mutableStateOf(pinPosition != null) }
+    var mapError by remember { mutableStateOf(false) }
 
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(pinPosition ?: defaultIndia, if (pinPosition != null) 17f else 5f)
@@ -74,7 +95,11 @@ fun GeofenceMapPickerScreen(
                 cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(pos, 17f))
             }
         } catch (_: Exception) {}
-        locationLoaded = true
+    }
+
+    if (mapError) {
+        MapsNotConfiguredScreen(onBack = { navController.navigateUp() })
+        return
     }
 
     val isEdit = geofenceId != null
@@ -89,9 +114,8 @@ fun GeofenceMapPickerScreen(
                 mapToolbarEnabled = false
             ),
             properties = MapProperties(isMyLocationEnabled = true),
-            onMapClick = { latLng ->
-                pinPosition = latLng
-            }
+            onMapClick = { latLng -> pinPosition = latLng },
+            onMapLoaded = { mapError = false }
         ) {
             pinPosition?.let { pos ->
                 Marker(
@@ -110,7 +134,6 @@ fun GeofenceMapPickerScreen(
             }
         }
 
-        // Back button
         IconButton(
             onClick = { navController.navigateUp() },
             modifier = Modifier
@@ -123,7 +146,6 @@ fun GeofenceMapPickerScreen(
             Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = AttendrTextPrimary, modifier = Modifier.size(20.dp))
         }
 
-        // My Location button
         FloatingActionButton(
             onClick = {
                 scope.launch {
@@ -149,7 +171,6 @@ fun GeofenceMapPickerScreen(
             Icon(Icons.Default.MyLocation, contentDescription = "My Location")
         }
 
-        // Bottom sheet
         Card(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -162,7 +183,6 @@ fun GeofenceMapPickerScreen(
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Handle bar
                 Box(
                     modifier = Modifier
                         .width(40.dp)
@@ -177,7 +197,6 @@ fun GeofenceMapPickerScreen(
                     color = AttendrTextPrimary
                 )
 
-                // Coordinates display
                 pinPosition?.let { pos ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -204,7 +223,6 @@ fun GeofenceMapPickerScreen(
                     placeholder = "e.g. Main Office"
                 )
 
-                // Radius slider
                 Column {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -241,6 +259,42 @@ fun GeofenceMapPickerScreen(
                     enabled = pinPosition != null && name.isNotBlank() && !saving
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun MapsNotConfiguredScreen(onBack: () -> Unit) {
+    AttendrBackground(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                Icons.Default.Map,
+                contentDescription = null,
+                tint = AttendrBorder,
+                modifier = Modifier.size(72.dp)
+            )
+            Spacer(Modifier.height(16.dp))
+            Text(
+                "Google Maps not configured",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = AttendrTextPrimary,
+                textAlign = TextAlign.Center
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "A valid Google Maps API key is required to use the map picker. Please use \"Enter Manually\" to add geofences.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = AttendrTextSecondary,
+                textAlign = TextAlign.Center
+            )
+            Spacer(Modifier.height(24.dp))
+            AttendrButton(text = "Go Back", onClick = onBack)
         }
     }
 }

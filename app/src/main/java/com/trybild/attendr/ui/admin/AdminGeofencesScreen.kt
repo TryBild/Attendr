@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.compose.ui.platform.LocalContext
 import com.trybild.attendr.data.model.GeofenceItem
 import com.trybild.attendr.ui.components.AttendrBackground
 import com.trybild.attendr.ui.components.AttendrButton
@@ -31,6 +32,9 @@ fun AdminGeofencesScreen(navController: NavController) {
     val vm: AdminGeofencesViewModel = viewModel()
     val state by vm.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    val context = LocalContext.current
+    val mapsAvailable = remember { isMapsApiKeyValid(context) }
 
     var showManualDialog by remember { mutableStateOf(false) }
     var manualEditItem by remember { mutableStateOf<GeofenceItem?>(null) }
@@ -82,15 +86,30 @@ fun AdminGeofencesScreen(navController: NavController) {
         AlertDialog(
             onDismissRequest = { showAddOptions = false },
             title = { Text("Add Geofence") },
-            text = { Text("How would you like to add a geofence?") },
+            text = {
+                Column {
+                    Text("How would you like to add a geofence?")
+                    if (!mapsAvailable) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            "Map picker requires a Google Maps API key.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = AttendrTextSecondary
+                        )
+                    }
+                }
+            },
             confirmButton = {
-                TextButton(onClick = {
-                    showAddOptions = false
-                    navController.navigate("geofence_map_picker")
-                }) {
+                TextButton(
+                    onClick = {
+                        showAddOptions = false
+                        navController.navigate("geofence_map_picker")
+                    },
+                    enabled = mapsAvailable
+                ) {
                     Icon(Icons.Default.Map, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Pick on Map")
+                    Text(if (mapsAvailable) "Pick on Map" else "Pick on Map (unavailable)")
                 }
             },
             dismissButton = {
@@ -158,13 +177,17 @@ fun AdminGeofencesScreen(navController: NavController) {
                         items(state.geofences, key = { it._id ?: it.name }) { gf ->
                             GeofenceCard(
                                 gf = gf,
+                                mapsAvailable = mapsAvailable,
                                 onEdit = {
-                                    val n = URLEncoder.encode(gf.name, "UTF-8")
-                                    navController.navigate(
-                                        "geofence_map_picker?lat=${gf.latitude}&lng=${gf.longitude}&name=$n&radius=${gf.radiusMeters.toInt()}&id=${gf._id}"
-                                    )
+                                    if (mapsAvailable) {
+                                        val n = URLEncoder.encode(gf.name, "UTF-8")
+                                        navController.navigate(
+                                            "geofence_map_picker?lat=${gf.latitude}&lng=${gf.longitude}&name=$n&radius=${gf.radiusMeters.toInt()}&id=${gf._id}"
+                                        )
+                                    } else {
+                                        manualEditItem = gf
+                                    }
                                 },
-                                onEditManual = { manualEditItem = gf },
                                 onDelete = { deleteItem = gf }
                             )
                         }
@@ -176,7 +199,7 @@ fun AdminGeofencesScreen(navController: NavController) {
 }
 
 @Composable
-private fun GeofenceCard(gf: GeofenceItem, onEdit: () -> Unit, onEditManual: () -> Unit, onDelete: () -> Unit) {
+private fun GeofenceCard(gf: GeofenceItem, mapsAvailable: Boolean, onEdit: () -> Unit, onDelete: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -206,9 +229,13 @@ private fun GeofenceCard(gf: GeofenceItem, onEdit: () -> Unit, onEditManual: () 
                     shape = RoundedCornerShape(8.dp),
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
                 ) {
-                    Icon(Icons.Default.Map, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Icon(
+                        if (mapsAvailable) Icons.Default.Map else Icons.Default.Edit,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
                     Spacer(Modifier.width(4.dp))
-                    Text("Edit on Map", style = MaterialTheme.typography.labelSmall)
+                    Text(if (mapsAvailable) "Edit on Map" else "Edit", style = MaterialTheme.typography.labelSmall)
                 }
                 OutlinedButton(
                     onClick = onDelete,
