@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.trybild.attendr.BuildConfig
 import com.trybild.attendr.data.local.TokenDataStore
+import com.trybild.attendr.data.model.GeofenceItem
 import com.trybild.attendr.data.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -34,6 +35,8 @@ data class AdminProfileUiState(
     val initialWorkDays: Set<String> = emptySet(),
     val initialWorkStartTime: String = "09:00",
     val initialWorkEndTime: String = "18:00",
+
+    val geofences: List<GeofenceItem> = emptyList(),
 
     val saving: Boolean = false,
     val saveError: String? = null,
@@ -99,6 +102,11 @@ class ProfileViewModel(app: Application) : AndroidViewModel(app) {
                         orgId = cachedOrgId
                     )
                 }
+            }
+
+            val geoResult = repo.getAdminGeofences()
+            if (geoResult.isSuccess) {
+                _state.update { it.copy(geofences = geoResult.getOrNull()?.geofences ?: emptyList()) }
             }
         }
     }

@@ -1,6 +1,10 @@
 package com.trybild.attendr.ui.home
 
 import android.Manifest
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -14,6 +18,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -40,15 +46,20 @@ fun HomeScreen(
     val employeeName by vm.employeeName.collectAsState()
     val badge by vm.badge.collectAsState()
     val isMockDetected by vm.mockDetected.collectAsState()
+    val context = LocalContext.current
     var errorMsg by remember { mutableStateOf("") }
     var successMsg by remember { mutableStateOf("") }
     var locationGranted by remember { mutableStateOf(false) }
+    var permDeniedCount by remember { mutableIntStateOf(0) }
+    var showRationale by remember { mutableStateOf(false) }
 
     val permLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { perms ->
-        locationGranted = perms[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+        val granted = perms[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
                 perms[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        locationGranted = granted
+        if (!granted) permDeniedCount++
     }
 
     LaunchedEffect(Unit) {
@@ -61,6 +72,35 @@ fun HomeScreen(
     LaunchedEffect(locationGranted) {
         if (locationGranted) vm.onLocationPermissionGranted()
         else vm.onLocationPermissionDenied()
+    }
+
+    if (showRationale) {
+        AlertDialog(
+            onDismissRequest = { showRationale = false },
+            title = { Text("Location Required", fontWeight = FontWeight.Bold) },
+            text = { Text("Attendr needs your location to verify you're at the office when marking attendance. Without it, check-in/out won't work.") },
+            confirmButton = {
+                if (permDeniedCount >= 2) {
+                    TextButton(onClick = {
+                        showRationale = false
+                        context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                            data = Uri.fromParts("package", context.packageName, null)
+                        })
+                    }) { Text("Open Settings") }
+                } else {
+                    TextButton(onClick = {
+                        showRationale = false
+                        permLauncher.launch(arrayOf(
+                            Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.ACCESS_COARSE_LOCATION
+                        ))
+                    }) { Text("Grant Permission") }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRationale = false }) { Text("Cancel") }
+            }
+        )
     }
 
     LaunchedEffect(state) {
@@ -109,13 +149,19 @@ fun HomeScreen(
         }
 
         if (!locationGranted) {
-            Button(onClick = {
-                permLauncher.launch(arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                ))
-            }, modifier = Modifier.fillMaxWidth()) {
-                Text("Allow Location Permission")
+            AttendrCard(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+                Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        "Location permission is required to mark attendance",
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                        color = AttendrError
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    AttendrButton(
+                        text = if (permDeniedCount >= 2) "Open Settings" else "Allow Location",
+                        onClick = { showRationale = true }
+                    )
+                }
             }
         } else {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
