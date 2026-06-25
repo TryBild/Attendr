@@ -165,18 +165,28 @@ data class MyAttendanceResponse(
     val error: String?
 )
 
-// Employee: GET /api/attendance/geofences
+// Geofences (shared between admin and employee)
 data class GeofenceItem(
+    val _id: String? = null,
     val name: String,
     val latitude: Double,
     val longitude: Double,
-    val radiusMeters: Double
+    val radiusMeters: Double,
+    val address: String? = null
 )
 data class GeofencesResponse(
     val ok: Boolean,
     val geofences: List<GeofenceItem>?,
     val error: String?
 )
+data class GeofenceCreateRequest(
+    val name: String,
+    val latitude: Double,
+    val longitude: Double,
+    val radiusMeters: Double,
+    val address: String? = null
+)
+data class GeofenceSingleResponse(val ok: Boolean, val geofence: GeofenceItem?, val error: String?)
 
 // Billing
 data class BillingStatusResponse(
