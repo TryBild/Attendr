@@ -23,6 +23,7 @@ import com.trybild.attendr.ui.components.AttendrBackground
 import com.trybild.attendr.ui.components.AttendrButton
 import com.trybild.attendr.ui.components.AttendrTextField
 import com.trybild.attendr.ui.theme.*
+import java.net.URLEncoder
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,9 +32,10 @@ fun AdminGeofencesScreen(navController: NavController) {
     val state by vm.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    var showAddDialog by remember { mutableStateOf(false) }
-    var editItem by remember { mutableStateOf<GeofenceItem?>(null) }
+    var showManualDialog by remember { mutableStateOf(false) }
+    var manualEditItem by remember { mutableStateOf<GeofenceItem?>(null) }
     var deleteItem by remember { mutableStateOf<GeofenceItem?>(null) }
+    var showAddOptions by remember { mutableStateOf(false) }
 
     LaunchedEffect(state.message) {
         state.message?.let {
@@ -42,19 +44,19 @@ fun AdminGeofencesScreen(navController: NavController) {
         }
     }
 
-    if (showAddDialog || editItem != null) {
+    if (showManualDialog || manualEditItem != null) {
         GeofenceFormDialog(
-            initial = editItem,
+            initial = manualEditItem,
             saving = state.saving,
-            onDismiss = { showAddDialog = false; editItem = null },
+            onDismiss = { showManualDialog = false; manualEditItem = null },
             onSave = { name, lat, lng, radius ->
-                val e = editItem
+                val e = manualEditItem
                 if (e?._id != null) {
                     vm.update(e._id, name, lat, lng, radius)
                 } else {
                     vm.create(name, lat, lng, radius)
                 }
-                showAddDialog = false; editItem = null
+                showManualDialog = false; manualEditItem = null
             }
         )
     }
@@ -76,6 +78,34 @@ fun AdminGeofencesScreen(navController: NavController) {
         )
     }
 
+    if (showAddOptions) {
+        AlertDialog(
+            onDismissRequest = { showAddOptions = false },
+            title = { Text("Add Geofence") },
+            text = { Text("How would you like to add a geofence?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showAddOptions = false
+                    navController.navigate("geofence_map_picker")
+                }) {
+                    Icon(Icons.Default.Map, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Pick on Map")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showAddOptions = false
+                    showManualDialog = true
+                }) {
+                    Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Enter Manually")
+                }
+            }
+        )
+    }
+
     AttendrBackground(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             containerColor = Color.Transparent,
@@ -93,7 +123,7 @@ fun AdminGeofencesScreen(navController: NavController) {
             },
             floatingActionButton = {
                 FloatingActionButton(
-                    onClick = { showAddDialog = true },
+                    onClick = { showAddOptions = true },
                     containerColor = AttendrNavy,
                     contentColor = Color.White
                 ) {
@@ -128,7 +158,13 @@ fun AdminGeofencesScreen(navController: NavController) {
                         items(state.geofences, key = { it._id ?: it.name }) { gf ->
                             GeofenceCard(
                                 gf = gf,
-                                onEdit = { editItem = gf },
+                                onEdit = {
+                                    val n = URLEncoder.encode(gf.name, "UTF-8")
+                                    navController.navigate(
+                                        "geofence_map_picker?lat=${gf.latitude}&lng=${gf.longitude}&name=$n&radius=${gf.radiusMeters.toInt()}&id=${gf._id}"
+                                    )
+                                },
+                                onEditManual = { manualEditItem = gf },
                                 onDelete = { deleteItem = gf }
                             )
                         }
@@ -140,32 +176,52 @@ fun AdminGeofencesScreen(navController: NavController) {
 }
 
 @Composable
-private fun GeofenceCard(gf: GeofenceItem, onEdit: () -> Unit, onDelete: () -> Unit) {
+private fun GeofenceCard(gf: GeofenceItem, onEdit: () -> Unit, onEditManual: () -> Unit, onDelete: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = AttendrSurface),
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Icon(Icons.Default.LocationOn, contentDescription = null, tint = AttendrNavy, modifier = Modifier.size(28.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(gf.name, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = AttendrTextPrimary)
-                Text("Lat: ${gf.latitude}, Lng: ${gf.longitude}", style = MaterialTheme.typography.bodySmall, color = AttendrTextSecondary)
-                Text("Radius: ${gf.radiusMeters.toInt()}m", style = MaterialTheme.typography.bodySmall, color = AttendrTextSecondary)
-                if (!gf.address.isNullOrBlank()) {
-                    Text(gf.address, style = MaterialTheme.typography.bodySmall, color = AttendrTextSecondary)
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Icon(Icons.Default.LocationOn, contentDescription = null, tint = AttendrNavy, modifier = Modifier.size(28.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(gf.name, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = AttendrTextPrimary)
+                    Text("%.6f, %.6f".format(gf.latitude, gf.longitude), style = MaterialTheme.typography.bodySmall, color = AttendrTextSecondary)
+                    Text("Radius: ${gf.radiusMeters.toInt()}m", style = MaterialTheme.typography.bodySmall, color = AttendrTextSecondary)
+                    if (!gf.address.isNullOrBlank()) {
+                        Text(gf.address, style = MaterialTheme.typography.bodySmall, color = AttendrTextSecondary)
+                    }
                 }
             }
-            IconButton(onClick = onEdit) {
-                Icon(Icons.Default.Edit, contentDescription = "Edit", tint = AttendrNavy, modifier = Modifier.size(20.dp))
-            }
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = AttendrError, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(
+                    onClick = onEdit,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(8.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                ) {
+                    Icon(Icons.Default.Map, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("Edit on Map", style = MaterialTheme.typography.labelSmall)
+                }
+                OutlinedButton(
+                    onClick = onDelete,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = AttendrError),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, AttendrError),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                ) {
+                    Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("Delete", style = MaterialTheme.typography.labelSmall)
+                }
             }
         }
     }
@@ -185,7 +241,7 @@ private fun GeofenceFormDialog(
 
     AlertDialog(
         onDismissRequest = { if (!saving) onDismiss() },
-        title = { Text(if (initial != null) "Edit Geofence" else "Add Geofence") },
+        title = { Text(if (initial != null) "Edit Geofence" else "Add Geofence (Manual)") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 AttendrTextField(value = name, onValueChange = { name = it }, label = "Name (e.g. Main Office)")
