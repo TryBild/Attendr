@@ -20,7 +20,11 @@ import com.trybild.attendr.ui.admin.AdminRegisterScreen
 import com.trybild.attendr.ui.admin.AdminSetupScreen
 import com.trybild.attendr.ui.admin.AttendanceCalendarScreen
 import com.trybild.attendr.ui.admin.ProfileScreen
+import com.trybild.attendr.ui.admin.AdminGeofencesScreen
+import com.trybild.attendr.ui.admin.AdminGeofencesViewModel
+import com.trybild.attendr.ui.admin.GeofenceMapPickerScreen
 import com.trybild.attendr.ui.admin.SubscriptionScreen
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.trybild.attendr.ui.help.ArticleScreen
 import com.trybild.attendr.ui.help.HelpCenterScreen
 import com.trybild.attendr.ui.employee.EmployeeShell
@@ -145,6 +149,32 @@ fun AppNav() {
 
         composable("admin_profile") {
             ProfileScreen(navController = navController)
+        }
+
+        composable("admin_geofences") {
+            AdminGeofencesScreen(navController = navController)
+        }
+
+        composable(
+            route = "geofence_map_picker?lat={lat}&lng={lng}&name={name}&radius={radius}&id={id}",
+            arguments = listOf(
+                navArgument("lat") { defaultValue = ""; type = NavType.StringType },
+                navArgument("lng") { defaultValue = ""; type = NavType.StringType },
+                navArgument("name") { defaultValue = ""; type = NavType.StringType },
+                navArgument("radius") { defaultValue = "100"; type = NavType.StringType },
+                navArgument("id") { defaultValue = ""; type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val geofencesVm: AdminGeofencesViewModel = viewModel()
+            GeofenceMapPickerScreen(
+                navController = navController,
+                initialLat = backStackEntry.arguments?.getString("lat")?.toDoubleOrNull(),
+                initialLng = backStackEntry.arguments?.getString("lng")?.toDoubleOrNull(),
+                initialName = backStackEntry.arguments?.getString("name")?.takeIf { it.isNotBlank() },
+                initialRadius = backStackEntry.arguments?.getString("radius")?.toFloatOrNull(),
+                geofenceId = backStackEntry.arguments?.getString("id")?.takeIf { it.isNotBlank() },
+                vm = geofencesVm
+            )
         }
 
         composable("subscription") {
