@@ -20,6 +20,7 @@ import com.trybild.attendr.ui.admin.AdminRegisterScreen
 import com.trybild.attendr.ui.admin.AdminSetupScreen
 import com.trybild.attendr.ui.admin.AttendanceCalendarScreen
 import com.trybild.attendr.ui.admin.ProfileScreen
+import com.trybild.attendr.ui.admin.AdminGeofencesScreen
 import com.trybild.attendr.ui.admin.SubscriptionScreen
 import com.trybild.attendr.ui.help.ArticleScreen
 import com.trybild.attendr.ui.help.HelpCenterScreen
@@ -145,6 +146,10 @@ fun AppNav() {
 
         composable("admin_profile") {
             ProfileScreen(navController = navController)
+        }
+
+        composable("admin_geofences") {
+            AdminGeofencesScreen(navController = navController)
         }
 
         composable("subscription") {

@@ -82,6 +82,30 @@ interface ApiService {
         @Path("id") employeeId: String
     ): Response<GenericResponse>
 
+    @GET("admin/geofences")
+    suspend fun getAdminGeofences(
+        @Header("Authorization") token: String
+    ): Response<GeofencesResponse>
+
+    @POST("admin/geofences")
+    suspend fun createGeofence(
+        @Header("Authorization") token: String,
+        @Body body: GeofenceCreateRequest
+    ): Response<GeofenceSingleResponse>
+
+    @PUT("admin/geofences/{id}")
+    suspend fun updateGeofence(
+        @Header("Authorization") token: String,
+        @Path("id") id: String,
+        @Body body: GeofenceCreateRequest
+    ): Response<GeofenceSingleResponse>
+
+    @DELETE("admin/geofences/{id}")
+    suspend fun deleteGeofence(
+        @Header("Authorization") token: String,
+        @Path("id") id: String
+    ): Response<GenericResponse>
+
     @GET("billing/status")
     suspend fun getBillingStatus(
         @Header("Authorization") token: String
