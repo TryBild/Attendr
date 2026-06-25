@@ -22,6 +22,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.trybild.attendr.data.model.GeofenceItem
 import com.trybild.attendr.ui.components.AttendrBackground
 import com.trybild.attendr.ui.components.AttendrButton
+import com.trybild.attendr.ui.components.AttendrEmptyState
 import com.trybild.attendr.ui.components.AttendrTextField
 import com.trybild.attendr.ui.theme.*
 import java.net.URLEncoder
@@ -157,15 +158,14 @@ fun AdminGeofencesScreen(navController: NavController) {
                     }
                 }
                 state.geofences.isEmpty() -> {
-                    Column(
-                        modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Icon(Icons.Default.LocationOn, contentDescription = null, tint = AttendrBorder, modifier = Modifier.size(56.dp))
-                        Spacer(Modifier.height(12.dp))
-                        Text("No geofences yet", style = MaterialTheme.typography.bodyLarge, color = AttendrTextSecondary)
-                        Text("Tap + to add your first office location", style = MaterialTheme.typography.bodySmall, color = AttendrTextSecondary)
+                    Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                        AttendrEmptyState(
+                            icon = Icons.Default.LocationOn,
+                            title = "No geofences yet",
+                            description = "Tap + to add your first office location",
+                            actionText = "Add Geofence",
+                            onAction = { showAddOptions = true }
+                        )
                     }
                 }
                 else -> {
