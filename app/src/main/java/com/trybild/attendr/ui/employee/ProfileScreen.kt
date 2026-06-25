@@ -18,6 +18,7 @@ import androidx.navigation.NavController
 import com.trybild.attendr.data.local.TokenDataStore
 import com.trybild.attendr.data.model.GeofenceItem
 import com.trybild.attendr.data.repository.AuthRepository
+import com.trybild.attendr.ui.components.AttendrEmptyState
 import com.trybild.attendr.ui.theme.*
 import kotlinx.coroutines.launch
 
@@ -103,14 +104,11 @@ fun ProfileScreen(outerNavController: NavController) {
         Text("Office Locations", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold), color = AttendrTextPrimary)
         Spacer(Modifier.height(8.dp))
         if (geofences.isEmpty()) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = AttendrSurface),
-                elevation = CardDefaults.cardElevation(2.dp)
-            ) {
-                Text("No geofence assigned", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium, color = AttendrTextSecondary)
-            }
+            AttendrEmptyState(
+                icon = Icons.Default.LocationOn,
+                title = "No geofence assigned",
+                description = "Contact your admin to set up office locations"
+            )
         } else {
             geofences.forEach { gf ->
                 Card(
@@ -123,7 +121,7 @@ fun ProfileScreen(outerNavController: NavController) {
                         Icon(Icons.Default.LocationOn, contentDescription = null, tint = AttendrNavy, modifier = Modifier.size(24.dp))
                         Column {
                             Text(gf.name, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold), color = AttendrTextPrimary)
-                            Text("${gf.latitude}, ${gf.longitude} (${gf.radiusMeters.toInt()}m)", style = MaterialTheme.typography.bodySmall, color = AttendrTextSecondary)
+                            Text("Radius: ${gf.radiusMeters.toInt()}m", style = MaterialTheme.typography.bodySmall, color = AttendrTextSecondary)
                         }
                     }
                 }
