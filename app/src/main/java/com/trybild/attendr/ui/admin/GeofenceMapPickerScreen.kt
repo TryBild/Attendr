@@ -2,7 +2,12 @@ package com.trybild.attendr.ui.admin
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.location.Geocoder
+import android.net.Uri
+import android.provider.Settings
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -24,6 +29,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.google.android.gms.location.LocationServices
@@ -35,6 +41,7 @@ import com.google.android.gms.tasks.CancellationTokenSource
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.AutocompletePrediction
 import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.api.model.RectangularBounds
 import com.google.android.libraries.places.api.net.FetchPlaceRequest
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
 import com.google.maps.android.compose.*
@@ -42,9 +49,12 @@ import com.trybild.attendr.ui.components.AttendrBackground
 import com.trybild.attendr.ui.components.AttendrButton
 import com.trybild.attendr.ui.components.AttendrTextField
 import com.trybild.attendr.ui.theme.*
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+import java.util.Locale
 
 private const val TAG = "AttendrMap"
 
@@ -85,6 +95,8 @@ fun GeofenceMapPickerScreen(
     val scope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
     val fusedLocation = remember { LocationServices.getFusedLocationProviderClient(context) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val activity = context as? Activity
 
     var hasLocationPermission by remember {
         mutableStateOf(
@@ -94,8 +106,25 @@ fun GeofenceMapPickerScreen(
     val permLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { perms ->
-        hasLocationPermission = perms[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+        val granted = perms[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
                 perms[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        hasLocationPermission = granted
+        if (!granted && activity != null &&
+            !ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.ACCESS_FINE_LOCATION)
+        ) {
+            scope.launch {
+                val result = snackbarHostState.showSnackbar(
+                    message = "Location permission denied. Enable it in Settings to center the map.",
+                    actionLabel = "Settings",
+                    duration = SnackbarDuration.Long
+                )
+                if (result == SnackbarResult.ActionPerformed) {
+                    context.startActivity(
+                        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null))
+                    )
+                }
+            }
+        }
     }
 
     LaunchedEffect(Unit) {
@@ -124,6 +153,7 @@ fun GeofenceMapPickerScreen(
     var mapTimedOut by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     var predictions by remember { mutableStateOf(emptyList<AutocompletePrediction>()) }
+    var searchError by remember { mutableStateOf<String?>(null) }
 
     val placesClient = remember {
         if (!Places.isInitialized()) {
@@ -165,17 +195,29 @@ fun GeofenceMapPickerScreen(
     LaunchedEffect(searchQuery) {
         if (searchQuery.length < 3) {
             predictions = emptyList()
+            searchError = null
             return@LaunchedEffect
         }
         delay(300)
         try {
+            val biasCenter = pinPosition ?: cameraPositionState.position.target
             val request = FindAutocompletePredictionsRequest.builder()
                 .setQuery(searchQuery)
+                .setCountries("IN")
+                .setLocationBias(
+                    RectangularBounds.newInstance(
+                        LatLng(biasCenter.latitude - 0.5, biasCenter.longitude - 0.5),
+                        LatLng(biasCenter.latitude + 0.5, biasCenter.longitude + 0.5)
+                    )
+                )
                 .build()
             val response = placesClient.findAutocompletePredictions(request).await()
             predictions = response.autocompletePredictions
-        } catch (_: Exception) {
+            searchError = null
+        } catch (e: Exception) {
             predictions = emptyList()
+            searchError = "Couldn't find places. Check your internet connection."
+            Log.w(TAG, "Autocomplete failed: ${e.message}")
         }
     }
 
@@ -192,7 +234,26 @@ fun GeofenceMapPickerScreen(
                 mapToolbarEnabled = false
             ),
             properties = MapProperties(isMyLocationEnabled = hasLocationPermission),
-            onMapClick = { latLng -> pinPosition = latLng },
+            onMapClick = { latLng ->
+                pinPosition = latLng
+                scope.launch(Dispatchers.IO) {
+                    try {
+                        val geocoder = Geocoder(context, Locale.getDefault())
+                        @Suppress("DEPRECATION")
+                        val address = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1)?.firstOrNull()
+                        val label = address?.let {
+                            listOfNotNull(it.featureName, it.subLocality ?: it.locality).distinct().joinToString(", ")
+                        }
+                        if (!label.isNullOrBlank()) {
+                            withContext(Dispatchers.Main) {
+                                if (name.isBlank()) name = label
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Reverse geocode failed: ${e.message}")
+                    }
+                }
+            },
             onMapLoaded = {
                 mapLoaded = true
                 mapTimedOut = false
@@ -278,7 +339,7 @@ fun GeofenceMapPickerScreen(
                     trailingContent = if (searchQuery.isNotEmpty()) {
                         {
                             IconButton(
-                                onClick = { searchQuery = ""; predictions = emptyList() },
+                                onClick = { searchQuery = ""; predictions = emptyList(); searchError = null },
                                 modifier = Modifier.size(20.dp)
                             ) {
                                 Icon(Icons.Default.Close, contentDescription = "Clear", tint = AttendrTextHint, modifier = Modifier.size(16.dp))
@@ -286,6 +347,22 @@ fun GeofenceMapPickerScreen(
                         }
                     } else null
                 )
+            }
+
+            if (searchError != null && predictions.isEmpty()) {
+                Card(
+                    modifier = Modifier.padding(top = 4.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = AttendrSurface),
+                    elevation = CardDefaults.cardElevation(4.dp)
+                ) {
+                    Text(
+                        searchError ?: "",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = AttendrTextSecondary,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
+                    )
+                }
             }
 
             if (predictions.isNotEmpty()) {
@@ -370,6 +447,13 @@ fun GeofenceMapPickerScreen(
                 Icon(Icons.Default.MyLocation, contentDescription = "My Location")
             }
         }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 300.dp)
+        )
 
         // Bottom sheet
         Card(
