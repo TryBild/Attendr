@@ -1,9 +1,19 @@
 package com.trybild.attendr.ui.admin
 
+import android.Manifest
 import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.location.Geocoder
+import android.net.Uri
+import android.provider.Settings
+import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,9 +25,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
@@ -25,28 +38,43 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.tasks.CancellationTokenSource
+import com.google.android.libraries.places.api.Places
+import com.google.android.libraries.places.api.model.AutocompletePrediction
+import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.api.model.RectangularBounds
+import com.google.android.libraries.places.api.net.FetchPlaceRequest
+import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
 import com.google.maps.android.compose.*
 import com.trybild.attendr.ui.components.AttendrBackground
 import com.trybild.attendr.ui.components.AttendrButton
 import com.trybild.attendr.ui.components.AttendrTextField
 import com.trybild.attendr.ui.theme.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+import java.util.Locale
+
+private const val TAG = "AttendrMap"
 
 fun isMapsApiKeyValid(context: android.content.Context): Boolean {
+    val key = getMapsApiKey(context)
+    return !key.isNullOrBlank() && key != "PLACEHOLDER_KEY"
+}
+
+fun getMapsApiKey(context: android.content.Context): String? {
     return try {
         val appInfo = context.packageManager.getApplicationInfo(
             context.packageName, PackageManager.GET_META_DATA
         )
-        val key = appInfo.metaData?.getString("com.google.android.geo.API_KEY")
-        !key.isNullOrBlank() && key != "PLACEHOLDER_KEY"
+        appInfo.metaData?.getString("com.google.android.geo.API_KEY")
     } catch (_: Exception) {
-        false
+        null
     }
 }
 
 @SuppressLint("MissingPermission")
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GeofenceMapPickerScreen(
     navController: NavController,
@@ -65,7 +93,51 @@ fun GeofenceMapPickerScreen(
     }
 
     val scope = rememberCoroutineScope()
+    val focusManager = LocalFocusManager.current
     val fusedLocation = remember { LocationServices.getFusedLocationProviderClient(context) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val activity = context as? Activity
+
+    var hasLocationPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+    val permLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { perms ->
+        val granted = perms[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                perms[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        hasLocationPermission = granted
+        if (!granted && activity != null &&
+            !ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.ACCESS_FINE_LOCATION)
+        ) {
+            scope.launch {
+                val result = snackbarHostState.showSnackbar(
+                    message = "Location permission denied. Enable it in Settings to center the map.",
+                    actionLabel = "Settings",
+                    duration = SnackbarDuration.Long
+                )
+                if (result == SnackbarResult.ActionPerformed) {
+                    context.startActivity(
+                        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null))
+                    )
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        val key = getMapsApiKey(context)
+        Log.i(TAG, "API key: ${key?.take(8)}...${key?.takeLast(4)} | package: ${context.packageName}")
+
+        if (!hasLocationPermission) {
+            permLauncher.launch(arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ))
+        }
+    }
 
     val defaultIndia = LatLng(20.5937, 78.9629)
     var pinPosition by remember {
@@ -77,14 +149,25 @@ fun GeofenceMapPickerScreen(
     var name by remember { mutableStateOf(initialName ?: "") }
     var radius by remember { mutableFloatStateOf(initialRadius ?: 100f) }
     var saving by remember { mutableStateOf(false) }
-    var mapError by remember { mutableStateOf(false) }
+    var mapLoaded by remember { mutableStateOf(false) }
+    var mapTimedOut by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    var predictions by remember { mutableStateOf(emptyList<AutocompletePrediction>()) }
+    var searchError by remember { mutableStateOf<String?>(null) }
+
+    val placesClient = remember {
+        if (!Places.isInitialized()) {
+            Places.initialize(context.applicationContext, getMapsApiKey(context) ?: "")
+        }
+        Places.createClient(context)
+    }
 
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(pinPosition ?: defaultIndia, if (pinPosition != null) 17f else 5f)
     }
 
-    LaunchedEffect(Unit) {
-        if (pinPosition != null) return@LaunchedEffect
+    LaunchedEffect(hasLocationPermission) {
+        if (!hasLocationPermission || pinPosition != null) return@LaunchedEffect
         try {
             val loc = fusedLocation.getCurrentLocation(
                 Priority.PRIORITY_HIGH_ACCURACY, CancellationTokenSource().token
@@ -93,16 +176,53 @@ fun GeofenceMapPickerScreen(
                 val pos = LatLng(loc.latitude, loc.longitude)
                 pinPosition = pos
                 cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(pos, 17f))
+                Log.i(TAG, "Location acquired: ${pos.latitude}, ${pos.longitude}")
             }
-        } catch (_: Exception) {}
+        } catch (e: Exception) {
+            Log.w(TAG, "Location fetch failed: ${e.message}")
+        }
     }
 
-    if (mapError) {
-        MapsNotConfiguredScreen(onBack = { navController.navigateUp() })
-        return
+    // If map tiles don't load after 8 seconds, show the fallback banner
+    LaunchedEffect(Unit) {
+        delay(8000)
+        if (!mapLoaded) {
+            mapTimedOut = true
+            Log.w(TAG, "Map tiles did not load within 8s — likely API key/billing issue")
+        }
+    }
+
+    LaunchedEffect(searchQuery) {
+        if (searchQuery.length < 3) {
+            predictions = emptyList()
+            searchError = null
+            return@LaunchedEffect
+        }
+        delay(300)
+        try {
+            val biasCenter = pinPosition ?: cameraPositionState.position.target
+            val request = FindAutocompletePredictionsRequest.builder()
+                .setQuery(searchQuery)
+                .setCountries("IN")
+                .setLocationBias(
+                    RectangularBounds.newInstance(
+                        LatLng(biasCenter.latitude - 0.5, biasCenter.longitude - 0.5),
+                        LatLng(biasCenter.latitude + 0.5, biasCenter.longitude + 0.5)
+                    )
+                )
+                .build()
+            val response = placesClient.findAutocompletePredictions(request).await()
+            predictions = response.autocompletePredictions
+            searchError = null
+        } catch (e: Exception) {
+            predictions = emptyList()
+            searchError = "Couldn't find places. Check your internet connection."
+            Log.w(TAG, "Autocomplete failed: ${e.message}")
+        }
     }
 
     val isEdit = geofenceId != null
+    val effectivePin = pinPosition ?: cameraPositionState.position.target
 
     Box(modifier = Modifier.fillMaxSize()) {
         GoogleMap(
@@ -113,9 +233,32 @@ fun GeofenceMapPickerScreen(
                 myLocationButtonEnabled = false,
                 mapToolbarEnabled = false
             ),
-            properties = MapProperties(isMyLocationEnabled = true),
-            onMapClick = { latLng -> pinPosition = latLng },
-            onMapLoaded = { mapError = false }
+            properties = MapProperties(isMyLocationEnabled = hasLocationPermission),
+            onMapClick = { latLng ->
+                pinPosition = latLng
+                scope.launch(Dispatchers.IO) {
+                    try {
+                        val geocoder = Geocoder(context, Locale.getDefault())
+                        @Suppress("DEPRECATION")
+                        val address = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1)?.firstOrNull()
+                        val label = address?.let {
+                            listOfNotNull(it.featureName, it.subLocality ?: it.locality).distinct().joinToString(", ")
+                        }
+                        if (!label.isNullOrBlank()) {
+                            withContext(Dispatchers.Main) {
+                                if (name.isBlank()) name = label
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Reverse geocode failed: ${e.message}")
+                    }
+                }
+            },
+            onMapLoaded = {
+                mapLoaded = true
+                mapTimedOut = false
+                Log.i(TAG, "Map tiles loaded successfully")
+            }
         ) {
             pinPosition?.let { pos ->
                 Marker(
@@ -134,6 +277,7 @@ fun GeofenceMapPickerScreen(
             }
         }
 
+        // Back button
         IconButton(
             onClick = { navController.navigateUp() },
             modifier = Modifier
@@ -146,31 +290,172 @@ fun GeofenceMapPickerScreen(
             Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = AttendrTextPrimary, modifier = Modifier.size(20.dp))
         }
 
-        FloatingActionButton(
-            onClick = {
-                scope.launch {
-                    try {
-                        val loc = fusedLocation.getCurrentLocation(
-                            Priority.PRIORITY_HIGH_ACCURACY, CancellationTokenSource().token
-                        ).await()
-                        if (loc != null) {
-                            val pos = LatLng(loc.latitude, loc.longitude)
-                            pinPosition = pos
-                            cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(pos, 17f))
-                        }
-                    } catch (_: Exception) {}
-                }
-            },
+        // Search bar + warning banner overlay
+        Column(
             modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(end = 16.dp, bottom = 320.dp),
-            containerColor = AttendrSurface,
-            contentColor = AttendrNavy,
-            shape = CircleShape
+                .statusBarsPadding()
+                .padding(start = 56.dp, end = 8.dp, top = 8.dp)
+                .align(Alignment.TopStart)
         ) {
-            Icon(Icons.Default.MyLocation, contentDescription = "My Location")
+            if (mapTimedOut && !mapLoaded) {
+                Card(
+                    shape = RoundedCornerShape(8.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFEF3C7))
+                ) {
+                    Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                        Text(
+                            "Map tiles not loading",
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                            color = Color(0xFF92400E)
+                        )
+                        Text(
+                            "Check Google Cloud Console: enable Maps SDK for Android, verify API key restrictions, enable billing.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color(0xFF92400E)
+                        )
+                        Text(
+                            "You can still save using \"Use map center\" below.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color(0xFF92400E)
+                        )
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+            }
+
+            Card(
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = AttendrSurface),
+                elevation = CardDefaults.cardElevation(4.dp)
+            ) {
+                AttendrTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    label = "",
+                    placeholder = "Search location",
+                    leadingContent = {
+                        Icon(Icons.Default.Search, contentDescription = null, tint = AttendrTextHint, modifier = Modifier.size(20.dp))
+                    },
+                    trailingContent = if (searchQuery.isNotEmpty()) {
+                        {
+                            IconButton(
+                                onClick = { searchQuery = ""; predictions = emptyList(); searchError = null },
+                                modifier = Modifier.size(20.dp)
+                            ) {
+                                Icon(Icons.Default.Close, contentDescription = "Clear", tint = AttendrTextHint, modifier = Modifier.size(16.dp))
+                            }
+                        }
+                    } else null
+                )
+            }
+
+            if (searchError != null && predictions.isEmpty()) {
+                Card(
+                    modifier = Modifier.padding(top = 4.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = AttendrSurface),
+                    elevation = CardDefaults.cardElevation(4.dp)
+                ) {
+                    Text(
+                        searchError ?: "",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = AttendrTextSecondary,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
+                    )
+                }
+            }
+
+            if (predictions.isNotEmpty()) {
+                Card(
+                    modifier = Modifier.padding(top = 4.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = AttendrSurface),
+                    elevation = CardDefaults.cardElevation(4.dp)
+                ) {
+                    Column {
+                        predictions.take(5).forEach { prediction ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        scope.launch {
+                                            try {
+                                                val placeFields = listOf(Place.Field.LAT_LNG)
+                                                val fetchRequest = FetchPlaceRequest.newInstance(prediction.placeId, placeFields)
+                                                val place = placesClient.fetchPlace(fetchRequest).await().place
+                                                place.latLng?.let { latLng ->
+                                                    pinPosition = latLng
+                                                    searchQuery = prediction.getPrimaryText(null).toString()
+                                                    if (name.isBlank()) name = prediction.getPrimaryText(null).toString()
+                                                    predictions = emptyList()
+                                                    focusManager.clearFocus()
+                                                    cameraPositionState.animate(
+                                                        CameraUpdateFactory.newLatLngZoom(latLng, 17f)
+                                                    )
+                                                }
+                                            } catch (_: Exception) {}
+                                        }
+                                    }
+                                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.LocationOn, contentDescription = null, tint = AttendrTextHint, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Column {
+                                    Text(
+                                        prediction.getPrimaryText(null).toString(),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = AttendrTextPrimary
+                                    )
+                                    Text(
+                                        prediction.getSecondaryText(null).toString(),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = AttendrTextSecondary,
+                                        maxLines = 1
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
+        if (hasLocationPermission) {
+            FloatingActionButton(
+                onClick = {
+                    scope.launch {
+                        try {
+                            val loc = fusedLocation.getCurrentLocation(
+                                Priority.PRIORITY_HIGH_ACCURACY, CancellationTokenSource().token
+                            ).await()
+                            if (loc != null) {
+                                val pos = LatLng(loc.latitude, loc.longitude)
+                                pinPosition = pos
+                                cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(pos, 17f))
+                            }
+                        } catch (_: Exception) {}
+                    }
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 16.dp, bottom = 320.dp),
+                containerColor = AttendrSurface,
+                contentColor = AttendrNavy,
+                shape = CircleShape
+            ) {
+                Icon(Icons.Default.MyLocation, contentDescription = "My Location")
+            }
+        }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 300.dp)
+        )
+
+        // Bottom sheet
         Card(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -197,24 +482,30 @@ fun GeofenceMapPickerScreen(
                     color = AttendrTextPrimary
                 )
 
-                pinPosition?.let { pos ->
+                // Coordinates display with fallback
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
                     ) {
                         Icon(Icons.Default.LocationOn, contentDescription = null, tint = AttendrNavy, modifier = Modifier.size(18.dp))
                         Text(
-                            "%.6f, %.6f".format(pos.latitude, pos.longitude),
+                            "%.6f, %.6f".format(effectivePin.latitude, effectivePin.longitude),
                             style = MaterialTheme.typography.bodySmall,
-                            color = AttendrTextSecondary
+                            color = if (pinPosition != null) AttendrTextSecondary else AttendrTextHint
                         )
                     }
-                } ?: Text(
-                    "Tap on the map to place a pin",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = AttendrTextHint
-                )
+                    if (pinPosition == null) {
+                        TextButton(onClick = { pinPosition = cameraPositionState.position.target }) {
+                            Text("Use map center", style = MaterialTheme.typography.labelSmall, color = AttendrNavy)
+                        }
+                    }
+                }
 
                 AttendrTextField(
                     value = name,
@@ -247,8 +538,8 @@ fun GeofenceMapPickerScreen(
                 AttendrButton(
                     text = if (saving) "Saving..." else "Save Geofence",
                     onClick = {
-                        val pos = pinPosition ?: return@AttendrButton
                         saving = true
+                        val pos = pinPosition ?: cameraPositionState.position.target
                         if (isEdit && geofenceId != null) {
                             vm.update(geofenceId, name.trim(), pos.latitude, pos.longitude, radius.toDouble())
                         } else {
@@ -256,7 +547,7 @@ fun GeofenceMapPickerScreen(
                         }
                         navController.navigateUp()
                     },
-                    enabled = pinPosition != null && name.isNotBlank() && !saving
+                    enabled = name.isNotBlank() && !saving
                 )
             }
         }
@@ -273,12 +564,7 @@ private fun MapsNotConfiguredScreen(onBack: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Icon(
-                Icons.Default.Map,
-                contentDescription = null,
-                tint = AttendrBorder,
-                modifier = Modifier.size(72.dp)
-            )
+            Icon(Icons.Default.Map, contentDescription = null, tint = AttendrBorder, modifier = Modifier.size(72.dp))
             Spacer(Modifier.height(16.dp))
             Text(
                 "Google Maps not configured",
@@ -288,7 +574,7 @@ private fun MapsNotConfiguredScreen(onBack: () -> Unit) {
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                "A valid Google Maps API key is required to use the map picker. Please use \"Enter Manually\" to add geofences.",
+                "A valid Google Maps API key is required. Use \"Enter Manually\" to add geofences.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = AttendrTextSecondary,
                 textAlign = TextAlign.Center
