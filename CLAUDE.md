@@ -1,5 +1,5 @@
 PROJECT: Attendr — GPS-based digital attendance SaaS for Indian SMBs/factories/shops.
-Builders: Nick (Rahul Yadav) + Viraaj, TryBild studio, Mumbai.
+Builder: Nick (Rahul Yadav), TryBild studio, Mumbai.
 
 TECH STACK (current, real — don't assume anything else):
 - Backend: Node.js + Express + MongoDB (Mongoose), JWT auth, bcrypt
@@ -18,7 +18,7 @@ AUTH MODEL (current real backend, not the old WhatsApp-OTP design):
 - Routes live under /api/auth/*, /api/attendance/*, /api/admin/*, /api/reports/*, /api/support/*
 
 WORKING STYLE:
-- Self-taught builders, not CS grads. Explain technical concepts in plain language when asked,
+- Self-taught, not a CS grad. Explain technical concepts in plain language when asked,
   but give exact runnable commands/code by default — don't oversimplify working sessions.
 - Communicate in Hinglish, direct, no corporate hedging, no unnecessary disclaimers.
 - When debugging: ask for exact terminal output / screenshots, diagnose from real evidence,
@@ -33,22 +33,8 @@ PRODUCT CONTEXT:
 - Attendr's differentiation: GPS+OTP only (no biometric/face), simple onboarding,
   transparent pricing, clean minimal UI (navy #1B3A7B brand color).
 - Multi-tenant: every query must scope by companyId/teamId — never leak data across orgs.
-- Pricing: Free (up to 5 employees), Rs.299/month, Rs.999/year
-- Current users: 121 paid, 200+ free
-
-SECURITY (already implemented — do not redo):
-- AES-256-GCM encryption on AttendanceLog lat/lng
-- bcrypt saltRounds=12 passwords, saltRounds=10 OTPs (hashed in DB)
-- OTP: crypto.randomInt(), single-use, 5-attempt lockout, 10min expiry
-- Rate limiting: otpRequest(5/10min), otpVerify(10/15min), auth(20/15min), global(200/min)
-- JWT: HS256 enforced, payload has id+companyId+kind, pendingToken expires 15min
-- Account lockout: 3 attempts=warning email, 5=lock 30min, 10=lock 24hrs
-- Security alert emails via nodemailer
-- SecurityLog model: 90-day TTL
-- Zod validation on all routes, mongo-sanitize, helmet, CORS allowlist
 
 DO NOT:
 - Suggest switching frameworks/stacks unless explicitly asked.
 - Assume the old WhatsApp-OTP or biometric design — permanently abandoned.
 - Give generic "it depends" answers — clear recommendation with reasoning always.
-- Redo any security work already listed above.
