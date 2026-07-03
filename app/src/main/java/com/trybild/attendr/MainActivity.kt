@@ -33,8 +33,10 @@ import com.trybild.attendr.ui.legal.PrivacyScreen
 import com.trybild.attendr.ui.legal.TermsScreen
 import com.trybild.attendr.ui.register.EmployeeAuthChoiceScreen
 import com.trybild.attendr.ui.register.EmployeeLoginScreen
+import com.trybild.attendr.ui.register.ForgotPasswordScreen
 import com.trybild.attendr.ui.register.OtpScreen
 import com.trybild.attendr.ui.register.RegisterScreen
+import com.trybild.attendr.ui.register.SetPasswordScreen
 import com.trybild.attendr.ui.roleselection.RoleSelectionScreen
 import com.trybild.attendr.ui.support.ContactSupportScreen
 import com.trybild.attendr.ui.theme.AttendrTheme
@@ -116,17 +118,47 @@ fun AppNav() {
         }
 
         composable(
-            route = "otp/{phone}?name={name}&orgId={orgId}",
+            route = "otp/{phone}?name={name}&orgId={orgId}&purpose={purpose}",
             arguments = listOf(
                 navArgument("phone") { type = NavType.StringType },
                 navArgument("name") { defaultValue = "" },
-                navArgument("orgId") { defaultValue = "" }
+                navArgument("orgId") { defaultValue = "" },
+                navArgument("purpose") { defaultValue = "register" }
             )
         ) { backStackEntry ->
             OtpScreen(
                 phone = backStackEntry.arguments?.getString("phone") ?: "",
                 name = backStackEntry.arguments?.getString("name") ?: "",
                 orgId = backStackEntry.arguments?.getString("orgId") ?: "",
+                navController = navController,
+                purpose = backStackEntry.arguments?.getString("purpose") ?: "register"
+            )
+        }
+
+        composable(
+            route = "forgot_password?mobile={mobile}&teamId={teamId}",
+            arguments = listOf(
+                navArgument("mobile") { defaultValue = "" },
+                navArgument("teamId") { defaultValue = "" }
+            )
+        ) { backStackEntry ->
+            ForgotPasswordScreen(
+                navController = navController,
+                initialMobile = backStackEntry.arguments?.getString("mobile") ?: "",
+                initialTeamId = backStackEntry.arguments?.getString("teamId") ?: ""
+            )
+        }
+
+        composable(
+            route = "set_password?pendingToken={pendingToken}&fullName={fullName}",
+            arguments = listOf(
+                navArgument("pendingToken") { defaultValue = "" },
+                navArgument("fullName") { defaultValue = "" }
+            )
+        ) { backStackEntry ->
+            SetPasswordScreen(
+                pendingToken = backStackEntry.arguments?.getString("pendingToken") ?: "",
+                fullName = backStackEntry.arguments?.getString("fullName") ?: "",
                 navController = navController
             )
         }

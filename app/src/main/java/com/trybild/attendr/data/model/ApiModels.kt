@@ -30,14 +30,23 @@ data class AdminProfileResponse(
     val error: String?
 )
 
-data class OtpRequestBody(val fullName: String, val mobile: String, val teamId: String)
+// purpose: "register" (default) or "forgot"; fullName only required for register
+data class OtpRequestBody(val fullName: String?, val mobile: String, val teamId: String, val purpose: String = "register")
 data class OtpVerifyBody(val mobile: String, val teamId: String, val otp: String)
 data class OtpResponse(val ok: Boolean, val message: String?)
+
+// Backend: POST /auth/otp/verify → { ok, pendingToken, fullName } (pendingToken expires 15m)
+data class OtpVerifyResponse(val ok: Boolean, val pendingToken: String?, val fullName: String?, val error: String?)
+
+// Backend: POST /auth/employee/set-password → { ok, token, employee } (same shape as AuthResponse)
+data class SetPasswordRequest(
+    val pendingToken: String, val password: String,
+    val confirmPassword: String, val deviceId: String? = null
+)
 
 // Backend: POST /auth/employee/login → { ok, token, employee: { ... } } (same shape as AuthResponse)
 data class EmployeeLoginRequest(val mobile: String, val teamId: String, val password: String, val deviceId: String? = null)
 
-// Matches actual backend: POST /auth/otp/verify → { ok, token, employee: { ... } }
 data class EmployeeCompany(val name: String, val teamId: String)
 data class EmployeeProfile(
     val id: String,

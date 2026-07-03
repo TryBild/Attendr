@@ -11,7 +11,7 @@ import kotlinx.coroutines.launch
 sealed class OtpUiState {
     object Idle : OtpUiState()
     object Loading : OtpUiState()
-    object Success : OtpUiState()
+    data class Verified(val pendingToken: String, val fullName: String) : OtpUiState()
     object OtpResent : OtpUiState()
     data class Error(val message: String) : OtpUiState()
 }
@@ -26,16 +26,16 @@ class OtpViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             _state.value = OtpUiState.Loading
             val result = repo.verifyEmployeeOtp(mobile, teamId, otp)
-            _state.value = if (result.isSuccess)
-                OtpUiState.Success
-            else
-                OtpUiState.Error(result.exceptionOrNull()?.message ?: "Invalid OTP")
+            _state.value = result.fold(
+                onSuccess = { OtpUiState.Verified(it.pendingToken!!, it.fullName ?: "") },
+                onFailure = { OtpUiState.Error(it.message ?: "Invalid OTP") }
+            )
         }
     }
 
-    fun resendOtp(fullName: String, mobile: String, teamId: String) {
+    fun resendOtp(fullName: String, mobile: String, teamId: String, purpose: String = "register") {
         viewModelScope.launch {
-            val result = repo.requestEmployeeOtp(fullName, mobile, teamId)
+            val result = repo.requestEmployeeOtp(fullName.ifBlank { null }, mobile, teamId, purpose)
             _state.value = if (result.isSuccess)
                 OtpUiState.OtpResent
             else

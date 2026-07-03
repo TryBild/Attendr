@@ -26,7 +26,10 @@ interface ApiService {
     suspend fun requestOtp(@Body body: OtpRequestBody): Response<OtpResponse>
 
     @POST("auth/otp/verify")
-    suspend fun verifyOtp(@Body body: OtpVerifyBody): Response<AuthResponse>
+    suspend fun verifyOtp(@Body body: OtpVerifyBody): Response<OtpVerifyResponse>
+
+    @POST("auth/employee/set-password")
+    suspend fun setPassword(@Body body: SetPasswordRequest): Response<AuthResponse>
 
     @POST("auth/employee/login")
     suspend fun employeeLogin(@Body body: EmployeeLoginRequest): Response<AuthResponse>
