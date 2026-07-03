@@ -12,6 +12,69 @@ function createTransporter() {
   });
 }
 
+async function sendSecurityEmail(to, subject, html) {
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    console.log(`[DEV] Security email (no SMTP configured): ${subject} → ${to}`);
+    return;
+  }
+  const transporter = createTransporter();
+  await transporter.sendMail({
+    from:    `"Attendr Security" <${process.env.SMTP_USER}>`,
+    to,
+    subject,
+    html,
+  });
+}
+
+// account: short label like `admin (x@y.com)` or `employee Ramesh (98XXXXXX01)`
+export async function sendLoginWarningEmail(email, { account, attempts, ip, time }) {
+  await sendSecurityEmail(
+    email,
+    "[Attendr] Warning: repeated failed login attempts",
+    `
+    <h2>Failed login attempts detected</h2>
+    <p>There have been <b>${attempts} failed login attempts</b> on the account: <b>${account || email}</b>.</p>
+    <table border="1" cellpadding="8" style="border-collapse:collapse">
+      <tr><td><b>IP address</b></td><td>${ip || "unknown"}</td></tr>
+      <tr><td><b>Time</b></td><td>${time || new Date().toISOString()}</td></tr>
+    </table>
+    <p>If this was not you or your employee, we recommend changing the password immediately.</p>
+    `
+  );
+}
+
+export async function sendAccountLockedEmail(email, { account, ip, lockedUntil }) {
+  await sendSecurityEmail(
+    email,
+    "[Attendr] Account locked after repeated failed logins",
+    `
+    <h2>Account locked</h2>
+    <p>The account <b>${account || email}</b> has been locked due to repeated failed login attempts.</p>
+    <table border="1" cellpadding="8" style="border-collapse:collapse">
+      <tr><td><b>IP address</b></td><td>${ip || "unknown"}</td></tr>
+      <tr><td><b>Locked until</b></td><td>${lockedUntil || "unknown"}</td></tr>
+    </table>
+    <p>Login will be possible again after the lock expires. If this was not expected, contact support.</p>
+    `
+  );
+}
+
+export async function sendPasswordChangedEmail(email, { account, ip, time }) {
+  await sendSecurityEmail(
+    email,
+    "[Attendr] Password was changed",
+    `
+    <h2>Password changed</h2>
+    <p>The password for account <b>${account || email}</b> was just changed.</p>
+    <table border="1" cellpadding="8" style="border-collapse:collapse">
+      <tr><td><b>IP address</b></td><td>${ip || "unknown"}</td></tr>
+      <tr><td><b>Time</b></td><td>${time || new Date().toISOString()}</td></tr>
+    </table>
+    <p>If this was not you or your employee, contact support immediately.</p>
+    `
+  );
+}
+
 export async function sendSupportTicketEmail(ticket) {
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     console.log("[DEV] Support ticket (no SMTP configured):", ticket.ticketId);

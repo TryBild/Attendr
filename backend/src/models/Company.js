@@ -6,6 +6,8 @@ const companySchema = new mongoose.Schema({
   adminEmail:    { type: String, required: true, unique: true, lowercase: true, trim: true },
   adminPassword: { type: String, required: true },
   adminName:     { type: String, trim: true },
+  loginAttempts: { type: Number, default: 0 },   // admin login failures
+  lockedUntil:   { type: Date, default: null },  // admin account lock
   phone:         { type: String },
   address:       { type: String },
   city:          { type: String, required: true },
