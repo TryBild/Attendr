@@ -1,12 +1,45 @@
+import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import { Company, Department, Employee, Geofence, Subscription } from "../models/index.js";
+import { Company, Department, Employee, Geofence, Subscription, SecurityLog } from "../models/index.js";
 import { sendOTP } from "../services/otpService.js";
+import {
+  sendLoginWarningEmail,
+  sendAccountLockedEmail,
+  sendPasswordChangedEmail,
+} from "../services/emailService.js";
 import { signToken } from "../middleware/auth.js";
 import { err } from "../utils/response.js";
 
 function generateOTP() {
-  return String(Math.floor(100000 + Math.random() * 900000));
+  return String(crypto.randomInt(100000, 1000000));
+}
+
+// Fire-and-forget: security logging and emails must never block or fail the auth flow
+function logSecurity(fields) {
+  SecurityLog.create(fields).catch(() => {});
+}
+function fireAndForget(promise) {
+  Promise.resolve(promise).catch(() => {});
+}
+
+// Shared lockout ladder: 3 fails = warning email, 5 = 30min lock, 10 = 24hr lock.
+// Mutates doc (loginAttempts/lockedUntil); caller must save. Emails go to the
+// company admin (employees have no email field on record).
+function applyFailedLogin(doc, { adminEmail, account, ip }) {
+  doc.loginAttempts = (doc.loginAttempts || 0) + 1;
+  const attempts = doc.loginAttempts;
+  if (attempts >= 10) {
+    doc.lockedUntil = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  } else if (attempts >= 5) {
+    doc.lockedUntil = new Date(Date.now() + 30 * 60 * 1000);
+  }
+  if (attempts === 3) {
+    fireAndForget(sendLoginWarningEmail(adminEmail, { account, attempts, ip, time: new Date().toISOString() }));
+  } else if (attempts === 5 || attempts === 10) {
+    fireAndForget(sendAccountLockedEmail(adminEmail, { account, ip, lockedUntil: doc.lockedUntil?.toISOString() }));
+  }
+  return attempts;
 }
 
 function generateTeamId(companyName) {
@@ -125,6 +158,14 @@ export async function verifyOTP(req, res) {
       employee.otpAttempts = (employee.otpAttempts || 0) + 1;
       if (employee.otpAttempts >= 3) {
         employee.otpLockedUntil = new Date(Date.now() + 15 * 60 * 1000);
+        logSecurity({
+          companyId: company._id,
+          userId:    employee._id,
+          userKind:  "employee",
+          event:     "otp_brute_force",
+          ip:        req.ip,
+          userAgent: req.headers["user-agent"],
+        });
       }
       await employee.save();
       const remaining = Math.max(0, 3 - employee.otpAttempts);
@@ -168,7 +209,7 @@ export async function employeeSetPassword(req, res) {
 
     let payload;
     try {
-      payload = jwt.verify(pendingToken, process.env.JWT_SECRET);
+      payload = jwt.verify(pendingToken, process.env.JWT_SECRET, { algorithms: ["HS256"] });
     } catch {
       return err(res, "Session expired. Please verify OTP again.", 401);
     }
@@ -183,8 +224,28 @@ export async function employeeSetPassword(req, res) {
     employee.passwordHash = await bcrypt.hash(password, 12);
     employee.isVerified = true;
     employee.lastLogin = new Date();
+    employee.loginAttempts = 0;
+    employee.lockedUntil = null;
     if (deviceId) employee.deviceId = deviceId;
     await employee.save();
+
+    logSecurity({
+      companyId: payload.companyId,
+      userId:    employee._id,
+      userKind:  "employee",
+      event:     "password_changed",
+      ip:        req.ip,
+      userAgent: req.headers["user-agent"],
+    });
+    fireAndForget(
+      Company.findById(payload.companyId).select("adminEmail teamId").then((c) =>
+        c && sendPasswordChangedEmail(c.adminEmail, {
+          account: `employee ${employee.fullName} (${maskMobile(employee.mobile)}, ${c.teamId})`,
+          ip:      req.ip,
+          time:    new Date().toISOString(),
+        })
+      )
+    );
 
     const token = signToken({
       id:        employee._id,
@@ -223,8 +284,30 @@ export async function employeeLogin(req, res) {
     if (!employee.isActive)
       return err(res, "Your account has been deactivated. Contact HR.", 403);
 
+    if (employee.lockedUntil && employee.lockedUntil > new Date())
+      return err(res, "Account locked until " + employee.lockedUntil.toISOString(), 423);
+
     const valid = await bcrypt.compare(password, employee.passwordHash);
-    if (!valid) return err(res, "Invalid credentials.", 401);
+    if (!valid) {
+      const attempts = applyFailedLogin(employee, {
+        adminEmail: company.adminEmail,
+        account:    `employee ${employee.fullName} (${maskMobile(mobile)}, ${company.teamId})`,
+        ip:         req.ip,
+      });
+      await employee.save();
+      logSecurity({
+        companyId: company._id,
+        userId:    employee._id,
+        userKind:  "employee",
+        event:     attempts >= 5 ? "account_locked" : "login_failed",
+        ip:        req.ip,
+        userAgent: req.headers["user-agent"],
+      });
+      return err(res, "Invalid credentials.", 401);
+    }
+
+    employee.loginAttempts = 0;
+    employee.lockedUntil = null;
 
     if (deviceId) {
       if (!employee.deviceId) {
@@ -236,6 +319,15 @@ export async function employeeLogin(req, res) {
 
     employee.lastLogin = new Date();
     await employee.save();
+
+    logSecurity({
+      companyId: company._id,
+      userId:    employee._id,
+      userKind:  "employee",
+      event:     "login_success",
+      ip:        req.ip,
+      userAgent: req.headers["user-agent"],
+    });
 
     const token = signToken({
       id:        employee._id,
@@ -281,8 +373,42 @@ export async function adminLogin(req, res) {
     if (!company) return err(res, "Invalid email or password.", 401);
     if (!company.isActive) return err(res, "Account is inactive. Contact support.", 403);
 
+    if (company.lockedUntil && company.lockedUntil > new Date())
+      return err(res, "Account locked until " + company.lockedUntil.toISOString(), 423);
+
     const valid = await bcrypt.compare(password, company.adminPassword);
-    if (!valid) return err(res, "Invalid email or password.", 401);
+    if (!valid) {
+      const attempts = applyFailedLogin(company, {
+        adminEmail: company.adminEmail,
+        account:    `admin (${company.adminEmail})`,
+        ip:         req.ip,
+      });
+      await company.save();
+      logSecurity({
+        companyId: company._id,
+        userId:    company._id,
+        userKind:  "admin",
+        event:     attempts >= 5 ? "account_locked" : "login_failed",
+        ip:        req.ip,
+        userAgent: req.headers["user-agent"],
+      });
+      return err(res, "Invalid email or password.", 401);
+    }
+
+    if (company.loginAttempts > 0 || company.lockedUntil) {
+      company.loginAttempts = 0;
+      company.lockedUntil = null;
+      await company.save();
+    }
+
+    logSecurity({
+      companyId: company._id,
+      userId:    company._id,
+      userKind:  "admin",
+      event:     "login_success",
+      ip:        req.ip,
+      userAgent: req.headers["user-agent"],
+    });
 
     const token = signToken({
       id:        company._id,

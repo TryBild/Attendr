@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import mongoSanitize from "mongo-sanitize";
 import morgan from "morgan";
 import { connectDB } from "./config/db.js";
 import { errorHandler } from "./middleware/errorHandler.js";
@@ -32,6 +33,15 @@ app.use(morgan("dev"));
 app.use("/api/webhooks", webhookRoutes);
 
 app.use(express.json({ limit: "10mb" }));
+
+// Strip $/. operators from user input to block NoSQL injection
+app.use((req, _res, next) => {
+  if (req.body) req.body = mongoSanitize(req.body);
+  if (req.params) req.params = mongoSanitize(req.params);
+  if (req.query) req.query = mongoSanitize(req.query);
+  next();
+});
+
 app.use(generalLimiter);
 
 // Health checks
