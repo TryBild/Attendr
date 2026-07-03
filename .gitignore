@@ -7,3 +7,6 @@ node_modules/
 keystore.properties
 keystore/*.jks
 keystore/*.keystore
+
+keystore.properties
+keystore/*.jks
