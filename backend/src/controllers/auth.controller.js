@@ -142,7 +142,7 @@ export async function verifyOTP(req, res) {
       companyId: company._id,
       teamId:    company.teamId,
       kind:      "pending",
-    }, "5m");
+    }, "15m");
 
     return res.json({
       ok: true,
