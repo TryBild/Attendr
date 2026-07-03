@@ -31,13 +31,18 @@ class AuthRepository(context: Context) {
         }
     }
 
-    suspend fun requestEmployeeOtp(fullName: String, mobile: String, teamId: String): Result<OtpResponse> {
+    suspend fun requestEmployeeOtp(
+        fullName: String?, mobile: String, teamId: String, purpose: String = "register"
+    ): Result<OtpResponse> {
         return try {
-            val res = api.requestOtp(OtpRequestBody(fullName, mobile, teamId))
+            val res = api.requestOtp(OtpRequestBody(fullName, mobile, teamId, purpose))
             if (res.isSuccessful && res.body()?.ok == true) {
                 Result.success(res.body()!!)
             } else {
-                val msg = res.body()?.message ?: "Could not send OTP. Check your details and try again."
+                // Error bodies come back as { ok:false, error } in errorBody()
+                val msg = runCatching {
+                    Gson().fromJson(res.errorBody()?.string(), GenericResponse::class.java)?.error
+                }.getOrNull() ?: res.body()?.message ?: "Could not send OTP. Check your details and try again."
                 Result.failure(Exception(msg))
             }
         } catch (e: Exception) {
@@ -45,9 +50,28 @@ class AuthRepository(context: Context) {
         }
     }
 
-    suspend fun verifyEmployeeOtp(mobile: String, teamId: String, otp: String): Result<AuthResponse> {
+    // Verify returns a short-lived pendingToken; session is only created by setEmployeePassword.
+    suspend fun verifyEmployeeOtp(mobile: String, teamId: String, otp: String): Result<OtpVerifyResponse> {
         return try {
             val res = api.verifyOtp(OtpVerifyBody(mobile, teamId, otp))
+            if (res.isSuccessful && res.body()?.ok == true && res.body()?.pendingToken != null) {
+                Result.success(res.body()!!)
+            } else {
+                val msg = runCatching {
+                    Gson().fromJson(res.errorBody()?.string(), OtpVerifyResponse::class.java)?.error
+                }.getOrNull() ?: res.body()?.error ?: "Invalid OTP. Please try again."
+                Result.failure(Exception(msg))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception(e.message ?: "Network error"))
+        }
+    }
+
+    suspend fun setEmployeePassword(
+        pendingToken: String, password: String, confirmPassword: String, deviceId: String? = null
+    ): Result<AuthResponse> {
+        return try {
+            val res = api.setPassword(SetPasswordRequest(pendingToken, password, confirmPassword, deviceId))
             if (res.isSuccessful && res.body()?.ok == true) {
                 val body = res.body()!!
                 body.token?.let { dataStore.saveToken(it) }
@@ -56,7 +80,9 @@ class AuthRepository(context: Context) {
                 body.employee?.company?.name?.let { dataStore.saveCompanyName(it) }
                 Result.success(body)
             } else {
-                val msg = res.body()?.error ?: "Invalid OTP. Please try again."
+                val msg = runCatching {
+                    Gson().fromJson(res.errorBody()?.string(), AuthResponse::class.java)?.error
+                }.getOrNull() ?: res.body()?.error ?: "Could not set password. Please try again."
                 Result.failure(Exception(msg))
             }
         } catch (e: Exception) {

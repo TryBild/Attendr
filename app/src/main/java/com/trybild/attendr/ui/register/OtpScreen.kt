@@ -1,5 +1,6 @@
 package com.trybild.attendr.ui.register
 
+import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -37,7 +38,8 @@ fun OtpScreen(
     phone: String,
     name: String,
     orgId: String,
-    navController: NavController
+    navController: NavController,
+    purpose: String = "register"
 ) {
     val vm: OtpViewModel = viewModel()
     val state by vm.state.collectAsStateWithLifecycle()
@@ -58,10 +60,11 @@ fun OtpScreen(
 
     LaunchedEffect(state) {
         when (val s = state) {
-            is OtpUiState.Success -> {
-                navController.navigate("home") {
-                    popUpTo("welcome") { inclusive = true }
-                }
+            is OtpUiState.Verified -> {
+                navController.navigate(
+                    "set_password?pendingToken=${Uri.encode(s.pendingToken)}&fullName=${Uri.encode(s.fullName)}"
+                )
+                vm.resetState()
             }
             is OtpUiState.OtpResent -> {
                 resendSeconds = 30
@@ -170,7 +173,7 @@ fun OtpScreen(
                             color = AttendrTextSecondary
                         )
                     } else {
-                        TextButton(onClick = { vm.resendOtp(name, phone, orgId) }) {
+                        TextButton(onClick = { vm.resendOtp(name, phone, orgId, purpose) }) {
                             Text("Resend", color = AttendrNavy)
                         }
                     }

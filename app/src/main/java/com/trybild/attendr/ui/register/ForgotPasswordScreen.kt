@@ -6,47 +6,49 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.trybild.attendr.ui.components.AttendrBackground
 import com.trybild.attendr.ui.components.AttendrButton
 import com.trybild.attendr.ui.components.AttendrTextField
 import com.trybild.attendr.ui.components.ErrorToast
 import com.trybild.attendr.ui.components.LogoIcon
-import com.trybild.attendr.ui.theme.*
+import com.trybild.attendr.ui.theme.AttendrTextPrimary
+import com.trybild.attendr.ui.theme.AttendrTextSecondary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EmployeeLoginScreen(navController: NavController) {
-    val vm: EmployeeLoginViewModel = viewModel()
+fun ForgotPasswordScreen(
+    navController: NavController,
+    initialMobile: String = "",
+    initialTeamId: String = ""
+) {
+    val vm: ForgotPasswordViewModel = viewModel()
     val state by vm.state.collectAsStateWithLifecycle()
 
-    var orgId by remember { mutableStateOf("") }
-    var mobile by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var passwordVisible by remember { mutableStateOf(false) }
+    var mobile by remember { mutableStateOf(initialMobile) }
+    var teamId by remember { mutableStateOf(initialTeamId) }
     var showError by remember { mutableStateOf(false) }
     var errorMsg by remember { mutableStateOf("") }
 
     LaunchedEffect(state) {
         when (val s = state) {
-            is EmployeeLoginState.Success -> {
-                navController.navigate("home") {
-                    popUpTo("welcome") { inclusive = true }
-                }
+            is ForgotPasswordState.OtpSent -> {
+                navController.navigate(
+                    "otp/${Uri.encode(s.mobile)}?orgId=${Uri.encode(teamId.trim())}&purpose=forgot"
+                )
+                vm.resetState()
             }
-            is EmployeeLoginState.Error -> {
+            is ForgotPasswordState.Error -> {
                 errorMsg = s.message
                 showError = true
                 vm.resetState()
@@ -55,12 +57,13 @@ fun EmployeeLoginScreen(navController: NavController) {
         }
     }
 
-    val isLoading = state is EmployeeLoginState.Loading
-    val isValid = orgId.isNotBlank() && mobile.length == 10 && password.isNotBlank()
+    val isLoading = state is ForgotPasswordState.Loading
+    val isValid = mobile.length == 10 && teamId.isNotBlank()
 
+    AttendrBackground(modifier = Modifier.fillMaxSize()) {
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
-            containerColor = AttendrBackground,
+            containerColor = Color.Transparent,
             topBar = {
                 TopAppBar(
                     title = {},
@@ -69,7 +72,7 @@ fun EmployeeLoginScreen(navController: NavController) {
                             Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                         }
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = AttendrBackground)
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
                 )
             }
         ) { padding ->
@@ -87,23 +90,22 @@ fun EmployeeLoginScreen(navController: NavController) {
                 Spacer(Modifier.height(16.dp))
 
                 Text(
-                    "Employee Login",
+                    "Forgot Password",
                     style = MaterialTheme.typography.displayLarge,
                     textAlign = TextAlign.Center,
                     color = AttendrTextPrimary
                 )
 
-                Spacer(Modifier.height(32.dp))
+                Spacer(Modifier.height(8.dp))
 
-                AttendrTextField(
-                    value = orgId,
-                    onValueChange = { orgId = it; showError = false },
-                    label = "Organisation ID",
-                    placeholder = "e.g. ATT-XXXX-XXXX",
-                    enabled = !isLoading
+                Text(
+                    "We'll send an OTP to your registered mobile number to reset your password.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = AttendrTextSecondary,
+                    textAlign = TextAlign.Center
                 )
 
-                Spacer(Modifier.height(20.dp))
+                Spacer(Modifier.height(32.dp))
 
                 AttendrTextField(
                     value = mobile,
@@ -130,47 +132,21 @@ fun EmployeeLoginScreen(navController: NavController) {
                 Spacer(Modifier.height(20.dp))
 
                 AttendrTextField(
-                    value = password,
-                    onValueChange = { password = it; showError = false },
-                    label = "Password",
-                    placeholder = "Enter your password",
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    visualTransformation = if (passwordVisible) VisualTransformation.None
-                                           else PasswordVisualTransformation(),
-                    enabled = !isLoading,
-                    trailingContent = {
-                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                            Icon(
-                                imageVector = if (passwordVisible) Icons.Default.VisibilityOff
-                                              else Icons.Default.Visibility,
-                                contentDescription = if (passwordVisible) "Hide password"
-                                                     else "Show password",
-                                tint = AttendrTextSecondary
-                            )
-                        }
-                    }
+                    value = teamId,
+                    onValueChange = { teamId = it; showError = false },
+                    label = "Team ID",
+                    placeholder = "e.g. TRY190",
+                    enabled = !isLoading
                 )
 
                 Spacer(Modifier.height(24.dp))
 
                 AttendrButton(
-                    text = if (isLoading) "Logging in…" else "Log In",
-                    onClick = { vm.login(mobile.trim(), orgId.trim(), password) },
-                    enabled = isValid && !isLoading
+                    text = if (isLoading) "Sending OTP…" else "Send OTP",
+                    onClick = { vm.requestOtp(mobile.trim(), teamId.trim()) },
+                    enabled = isValid && !isLoading,
+                    isLoading = isLoading
                 )
-
-                Spacer(Modifier.height(12.dp))
-
-                TextButton(
-                    onClick = {
-                        navController.navigate(
-                            "forgot_password?mobile=${Uri.encode(mobile)}&teamId=${Uri.encode(orgId.trim())}"
-                        )
-                    },
-                    enabled = !isLoading
-                ) {
-                    Text("Forgot Password?", color = AttendrNavy)
-                }
             }
         }
 
@@ -182,5 +158,6 @@ fun EmployeeLoginScreen(navController: NavController) {
                 .align(Alignment.TopCenter)
                 .padding(top = 72.dp, start = 16.dp, end = 16.dp)
         )
+    }
     }
 }
