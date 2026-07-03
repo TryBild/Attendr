@@ -17,6 +17,26 @@ AUTH MODEL (current real backend, not the old WhatsApp-OTP design):
 - Employee: registers via fullName + mobile + teamId → OTP via SMS → verify → JWT
 - Routes live under /api/auth/*, /api/attendance/*, /api/admin/*, /api/reports/*, /api/support/*
 
+SECURITY — IMPLEMENTED (verified against backend code 2026-07-03 — do NOT redo):
+- bcrypt saltRounds=12 passwords, saltRounds=10 OTPs (hashed in DB, never plain text)
+- OTP: 6-digit, single-use, 10min expiry; >5 requests = 30min lock, 3 failed verifies = 15min lock
+- pendingToken: JWT, expires 15min, kind:"pending"
+- Rate limiting: otpRequest 5/10min (keyed by mobile), global 200/15min (keyed by IP)
+- JWT payload: id + companyId + kind; requireAuth(kinds) middleware for role checks
+- tenantScope middleware: every authed route requires companyId — all queries must filter by it
+- Input validation: manual validation on all routes (NOT Zod — no Zod in backend)
+- helmet + CORS (single ALLOWED_ORIGIN env var on Render; falls back to "*" if unset)
+- Support ticket emails via nodemailer v9
+- node_modules tracked in git (known issue, cleanup pending)
+
+SECURITY — NOT IMPLEMENTED (old docs falsely claimed these; treat as pending hardening work):
+- AES-256-GCM encryption on lat/lng — coordinates stored plain
+- crypto.randomInt() for OTP — currently Math.random(), should be upgraded
+- Separate otpVerify / auth-login rate limiters
+- HS256 algorithm enforcement on jwt.verify
+- Account lockout warning emails / 24hr lock tier
+- Security alert emails, SecurityLog model, mongo-sanitize
+
 WORKING STYLE:
 - Self-taught, not a CS grad. Explain technical concepts in plain language when asked,
   but give exact runnable commands/code by default — don't oversimplify working sessions.
