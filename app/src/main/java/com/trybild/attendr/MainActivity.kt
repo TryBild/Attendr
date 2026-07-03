@@ -35,6 +35,7 @@ import com.trybild.attendr.ui.register.EmployeeAuthChoiceScreen
 import com.trybild.attendr.ui.register.EmployeeLoginScreen
 import com.trybild.attendr.ui.register.OtpScreen
 import com.trybild.attendr.ui.register.RegisterScreen
+import com.trybild.attendr.ui.register.SetPasswordScreen
 import com.trybild.attendr.ui.roleselection.RoleSelectionScreen
 import com.trybild.attendr.ui.support.ContactSupportScreen
 import com.trybild.attendr.ui.theme.AttendrTheme
@@ -127,6 +128,20 @@ fun AppNav() {
                 phone = backStackEntry.arguments?.getString("phone") ?: "",
                 name = backStackEntry.arguments?.getString("name") ?: "",
                 orgId = backStackEntry.arguments?.getString("orgId") ?: "",
+                navController = navController
+            )
+        }
+
+        composable(
+            route = "set_password/{pendingToken}?fullName={fullName}",
+            arguments = listOf(
+                navArgument("pendingToken") { type = NavType.StringType },
+                navArgument("fullName") { defaultValue = "" }
+            )
+        ) { backStackEntry ->
+            SetPasswordScreen(
+                pendingToken = backStackEntry.arguments?.getString("pendingToken") ?: "",
+                fullName = backStackEntry.arguments?.getString("fullName") ?: "",
                 navController = navController
             )
         }

@@ -5,18 +5,24 @@ const employeeSchema = new mongoose.Schema({
   department:    { type: mongoose.Schema.Types.ObjectId, ref: "Department" },
   fullName:      { type: String, required: true, trim: true },
   mobile:        { type: String, required: true, trim: true },
+  // Not collected at registration today; lets security alerts reach the
+  // employee directly once an email-capture flow exists. Falls back to the
+  // company admin's email until then — see services/securityAlert.js.
+  email:         { type: String, trim: true, lowercase: true },
   employeeCode:  { type: String },
   designation:   { type: String },
-  passwordHash:  { type: String },
+  passwordHash:  { type: String, select: false },
   isActive:      { type: Boolean, default: true },
   isVerified:    { type: Boolean, default: false },
   joinedAt:      { type: Date, default: Date.now },
   lastLogin:     { type: Date },
-  otp:           { type: String },
+  otp:           { type: String, select: false },
   otpExpiry:     { type: Date },
   otpAttempts:   { type: Number, default: 0 },
   otpLockedUntil:{ type: Date },
   deviceId:      { type: String, default: null, index: true },
+  loginAttempts: { type: Number, default: 0 },
+  lockedUntil:   { type: Date, default: null },
 }, { timestamps: true });
 
 employeeSchema.index({ mobile: 1, company: 1 }, { unique: true });

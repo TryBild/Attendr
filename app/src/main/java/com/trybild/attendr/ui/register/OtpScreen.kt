@@ -59,9 +59,9 @@ fun OtpScreen(
     LaunchedEffect(state) {
         when (val s = state) {
             is OtpUiState.Success -> {
-                navController.navigate("home") {
-                    popUpTo("welcome") { inclusive = true }
-                }
+                val encodedToken = java.net.URLEncoder.encode(s.pendingToken, "UTF-8")
+                val encodedName = java.net.URLEncoder.encode(name, "UTF-8")
+                navController.navigate("set_password/$encodedToken?fullName=$encodedName")
             }
             is OtpUiState.OtpResent -> {
                 resendSeconds = 30

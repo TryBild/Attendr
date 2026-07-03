@@ -31,6 +31,9 @@ interface ApiService {
     @POST("auth/employee/login")
     suspend fun employeeLogin(@Body body: EmployeeLoginRequest): Response<AuthResponse>
 
+    @POST("auth/employee/set-password")
+    suspend fun setEmployeePassword(@Body body: SetPasswordBody): Response<AuthResponse>
+
     @POST("attendance/mark")
     suspend fun markAttendance(
         @Header("Authorization") token: String,

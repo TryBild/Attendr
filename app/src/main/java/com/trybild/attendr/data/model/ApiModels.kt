@@ -49,7 +49,10 @@ data class EmployeeProfile(
     val joinedAt: String?,
     val company: EmployeeCompany?
 )
-data class AuthResponse(val ok: Boolean, val token: String?, val employee: EmployeeProfile?, val error: String?)
+data class AuthResponse(val ok: Boolean, val token: String?, val pendingToken: String? = null, val employee: EmployeeProfile?, val error: String?)
+
+// Backend: POST /auth/employee/set-password → { ok, token, employee } (same shape as AuthResponse)
+data class SetPasswordBody(val pendingToken: String, val password: String, val confirmPassword: String)
 // Body must match backend: const { latitude, longitude, action } = req.body
 // action values must be "checkin" or "checkout" (not "in"/"out")
 data class MarkAttendanceBody(val action: String, val latitude: Double?, val longitude: Double?, val mockDetected: Boolean = false, val deviceId: String? = null)

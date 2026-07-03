@@ -49,6 +49,20 @@ class AuthRepository(context: Context) {
         return try {
             val res = api.verifyOtp(OtpVerifyBody(mobile, teamId, otp))
             if (res.isSuccessful && res.body()?.ok == true) {
+                Result.success(res.body()!!)
+            } else {
+                val msg = res.body()?.error ?: "Invalid OTP. Please try again."
+                Result.failure(Exception(msg))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception(e.message ?: "Network error"))
+        }
+    }
+
+    suspend fun setEmployeePassword(pendingToken: String, password: String): Result<AuthResponse> {
+        return try {
+            val res = api.setEmployeePassword(SetPasswordBody(pendingToken, password, password))
+            if (res.isSuccessful && res.body()?.ok == true) {
                 val body = res.body()!!
                 body.token?.let { dataStore.saveToken(it) }
                 dataStore.saveUserKind("employee")
@@ -56,7 +70,7 @@ class AuthRepository(context: Context) {
                 body.employee?.company?.name?.let { dataStore.saveCompanyName(it) }
                 Result.success(body)
             } else {
-                val msg = res.body()?.error ?: "Invalid OTP. Please try again."
+                val msg = res.body()?.error ?: "Could not set password. Please try again."
                 Result.failure(Exception(msg))
             }
         } catch (e: Exception) {
