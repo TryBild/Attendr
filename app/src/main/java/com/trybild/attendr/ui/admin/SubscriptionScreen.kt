@@ -159,10 +159,14 @@ fun SubscriptionScreen(navController: NavController) {
                     if (state.status == "active") {
                         OutlinedButton(
                             onClick = { vm.cancelSubscription() },
+                            enabled = !state.cancelLoading,
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(14.dp)
                         ) {
-                            Text("Cancel Subscription", color = AttendrTextSecondary)
+                            Text(
+                                if (state.cancelLoading) "Cancelling..." else "Cancel Subscription",
+                                color = AttendrTextSecondary
+                            )
                         }
                     }
 
