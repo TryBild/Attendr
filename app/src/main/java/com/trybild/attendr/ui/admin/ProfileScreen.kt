@@ -364,7 +364,18 @@ fun ProfileScreen(navController: NavController) {
             HorizontalDivider(color = AttendrDivider)
             Spacer(Modifier.height(16.dp))
 
-            // ── Section 5: App info + logout ──────────────────────────────
+            // ── Section 5: Billing ────────────────────────────────────────
+            SectionHeader("Billing")
+            AttendrButton(
+                text = "Manage Subscription",
+                onClick = { navController.navigate("subscription") }
+            )
+
+            Spacer(Modifier.height(28.dp))
+            HorizontalDivider(color = AttendrDivider)
+            Spacer(Modifier.height(16.dp))
+
+            // ── Section 6: App info + logout ──────────────────────────────
             SectionHeader("About")
             Row(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
