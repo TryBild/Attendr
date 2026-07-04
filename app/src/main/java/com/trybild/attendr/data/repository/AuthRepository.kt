@@ -366,6 +366,21 @@ class AuthRepository(context: Context) {
         }
     }
 
+    suspend fun cancelSubscription(): Result<GenericResponse> {
+        return try {
+            val token = dataStore.token.firstOrNull()
+                ?: return Result.failure(Exception("Not logged in"))
+            val res = api.cancelSubscription("Bearer $token")
+            if (res.isSuccessful && res.body()?.ok == true) {
+                Result.success(res.body()!!)
+            } else {
+                Result.failure(Exception(res.body()?.error ?: "Could not cancel subscription"))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception(e.message ?: "Network error"))
+        }
+    }
+
     suspend fun adminProfile(): Result<AdminProfileResponse> {
         return try {
             val token = dataStore.token.firstOrNull()
