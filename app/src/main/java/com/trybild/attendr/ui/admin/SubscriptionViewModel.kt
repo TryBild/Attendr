@@ -15,6 +15,7 @@ data class SubscriptionState(
     val status: String = "none",
     val trialDaysLeft: Int = 0,
     val upgradeLoading: Boolean = false,
+    val cancelLoading: Boolean = false,
     val checkoutUrl: String? = null,
     val error: String? = null
 )
@@ -65,9 +66,17 @@ class SubscriptionViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun cancelSubscription() {
+        _state.update { it.copy(cancelLoading = true, error = null) }
         viewModelScope.launch {
-            _state.update { it.copy(error = null) }
-            loadStatus()
+            val result = repo.cancelSubscription()
+            if (result.isSuccess) {
+                _state.update { it.copy(cancelLoading = false) }
+                loadStatus()
+            } else {
+                _state.update {
+                    it.copy(cancelLoading = false, error = result.exceptionOrNull()?.message)
+                }
+            }
         }
     }
 
