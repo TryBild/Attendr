@@ -2,6 +2,7 @@ package com.trybild.attendr.ui.admin
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -16,12 +17,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.trybild.attendr.ui.components.AttendrBackground
 import com.trybild.attendr.ui.components.AttendrButton
+import com.trybild.attendr.ui.legal.AttendrUrls
+import com.trybild.attendr.ui.legal.openUrl
 import com.trybild.attendr.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -155,6 +159,14 @@ fun SubscriptionScreen(navController: NavController) {
                             isLoading = state.upgradeLoading
                         )
                     }
+
+                    Text(
+                        "View full pricing",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = AttendrNavy,
+                        textDecoration = TextDecoration.Underline,
+                        modifier = Modifier.clickable { context.openUrl(AttendrUrls.PRICING) }
+                    )
 
                     if (state.status == "active") {
                         OutlinedButton(

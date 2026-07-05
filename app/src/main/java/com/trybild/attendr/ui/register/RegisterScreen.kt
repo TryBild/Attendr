@@ -24,6 +24,7 @@ import com.trybild.attendr.ui.components.AttendrButton
 import com.trybild.attendr.ui.components.AttendrTextField
 import com.trybild.attendr.ui.components.ErrorToast
 import com.trybild.attendr.ui.components.LogoIcon
+import com.trybild.attendr.ui.legal.LegalConsentText
 import com.trybild.attendr.ui.theme.AttendrTextPrimary
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -136,6 +137,10 @@ fun RegisterScreen(navController: NavController) {
                     onClick = { vm.requestOtp(name.trim(), phone, orgId.trim()) },
                     enabled = isValid && state !is RegisterState.Loading
                 )
+
+                Spacer(Modifier.height(12.dp))
+
+                LegalConsentText(modifier = Modifier.fillMaxWidth())
             }
         }
 

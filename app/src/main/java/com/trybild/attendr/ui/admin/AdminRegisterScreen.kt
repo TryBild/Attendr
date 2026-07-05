@@ -31,6 +31,7 @@ import com.trybild.attendr.ui.components.AttendrBackground
 import com.trybild.attendr.ui.components.AttendrButton
 import com.trybild.attendr.ui.components.AttendrTextField
 import com.trybild.attendr.ui.components.LogoIcon
+import com.trybild.attendr.ui.legal.LegalConsentText
 import com.trybild.attendr.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -404,6 +405,10 @@ fun AdminRegisterScreen(navController: NavController) {
                     },
                     enabled = !isLoading
                 )
+
+                Spacer(Modifier.height(12.dp))
+
+                LegalConsentText(modifier = Modifier.fillMaxWidth())
 
                 Spacer(Modifier.height(16.dp))
 
