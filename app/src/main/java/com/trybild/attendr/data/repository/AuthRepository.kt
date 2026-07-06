@@ -78,6 +78,7 @@ class AuthRepository(context: Context) {
                 dataStore.saveUserKind("employee")
                 body.employee?.fullName?.let { dataStore.saveEmployeeName(it) }
                 body.employee?.company?.name?.let { dataStore.saveCompanyName(it) }
+                body.employee?.joinedAt?.let { dataStore.saveEmployeeJoinedAt(it) }
                 Result.success(body)
             } else {
                 val msg = runCatching {
@@ -99,6 +100,7 @@ class AuthRepository(context: Context) {
                 dataStore.saveUserKind("employee")
                 body.employee?.fullName?.let { dataStore.saveEmployeeName(it) }
                 body.employee?.company?.name?.let { dataStore.saveCompanyName(it) }
+                body.employee?.joinedAt?.let { dataStore.saveEmployeeJoinedAt(it) }
                 Result.success(body)
             } else {
                 // 401/403/404 bodies are in errorBody() as { ok:false, error }; surface the exact message.

@@ -3,11 +3,13 @@ package com.trybild.attendr.ui.myattendance
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.trybild.attendr.data.local.TokenDataStore
 import com.trybild.attendr.data.model.MyAttendanceSummary
 import com.trybild.attendr.data.repository.AuthRepository
 import com.trybild.attendr.ui.admin.Holidays
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.*
@@ -20,7 +22,8 @@ data class EmployeeDayData(
     val workingHours: Double?,
     val isHoliday: Boolean,
     val holidayName: String?,
-    val isWeekend: Boolean
+    val isWeekend: Boolean,
+    val isBeforeJoin: Boolean = false
 )
 
 data class MyAttendanceState(
@@ -35,6 +38,7 @@ data class MyAttendanceState(
 
 class MyAttendanceViewModel(app: Application) : AndroidViewModel(app) {
     private val repo = AuthRepository(app)
+    private val dataStore = TokenDataStore(app)
     private val _state = MutableStateFlow(MyAttendanceState())
     val state: StateFlow<MyAttendanceState> = _state
 
@@ -90,31 +94,34 @@ class MyAttendanceViewModel(app: Application) : AndroidViewModel(app) {
         val (year, month) = currentYearMonth()
         _state.update { it.copy(loading = true, error = null) }
 
-        val cal = Calendar.getInstance()
-        cal.set(year, month - 1, 1)
-        val daysInMonth = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
-
-        val dayCal = Calendar.getInstance()
-        val initial = (1..daysInMonth).associate { day ->
-            val dateStr = "%04d-%02d-%02d".format(year, month, day)
-            dayCal.set(year, month - 1, day)
-            val dow = dayCal.get(Calendar.DAY_OF_WEEK)
-            val isWeekend = dow == Calendar.SATURDAY || dow == Calendar.SUNDAY
-            val holidayName = Holidays.forDate(dateStr, year)
-            dateStr to EmployeeDayData(
-                date = dateStr,
-                status = null,
-                checkInTime = null,
-                checkOutTime = null,
-                workingHours = null,
-                isHoliday = holidayName != null,
-                holidayName = holidayName,
-                isWeekend = isWeekend
-            )
-        }
-        _state.update { it.copy(dayData = initial) }
-
         viewModelScope.launch {
+            val joinedDateStr = dataStore.employeeJoinedAt.firstOrNull()?.take(10)
+
+            val cal = Calendar.getInstance()
+            cal.set(year, month - 1, 1)
+            val daysInMonth = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
+
+            val dayCal = Calendar.getInstance()
+            val initial = (1..daysInMonth).associate { day ->
+                val dateStr = "%04d-%02d-%02d".format(year, month, day)
+                dayCal.set(year, month - 1, day)
+                val dow = dayCal.get(Calendar.DAY_OF_WEEK)
+                val isWeekend = dow == Calendar.SATURDAY || dow == Calendar.SUNDAY
+                val holidayName = Holidays.forDate(dateStr, year)
+                dateStr to EmployeeDayData(
+                    date = dateStr,
+                    status = null,
+                    checkInTime = null,
+                    checkOutTime = null,
+                    workingHours = null,
+                    isHoliday = holidayName != null,
+                    holidayName = holidayName,
+                    isWeekend = isWeekend,
+                    isBeforeJoin = joinedDateStr != null && dateStr < joinedDateStr
+                )
+            }
+            _state.update { it.copy(dayData = initial) }
+
             val monthStr = "%04d-%02d".format(year, month)
             val result = repo.getMyAttendance(monthStr)
             if (result.isSuccess) {
@@ -122,6 +129,7 @@ class MyAttendanceViewModel(app: Application) : AndroidViewModel(app) {
                 val updated = initial.toMutableMap()
                 for (r in body.records ?: emptyList()) {
                     val existing = updated[r.date] ?: continue
+                    if (existing.isBeforeJoin) continue
                     updated[r.date] = existing.copy(
                         status = r.status,
                         checkInTime = r.checkInTime,

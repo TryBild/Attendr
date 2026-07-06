@@ -1,5 +1,6 @@
 package com.trybild.attendr.ui.myattendance
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -154,22 +155,43 @@ fun MyAttendanceScreen(navController: NavController, showBackButton: Boolean = t
 
             Spacer(Modifier.height(16.dp))
 
-            // Legend
+            // Breakdown pie chart + legend
+            val breakdown = remember(state.dayData) { attendanceBreakdown(state.dayData) }
             Card(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(containerColor = AttendrSurface),
                 elevation = CardDefaults.cardElevation(2.dp)
             ) {
-                Row(
-                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    LegendDot(PresentGreen, "Present")
-                    LegendDot(AbsentRed,    "Absent")
-                    LegendDot(HolidayOrange, "Holiday")
-                    LegendDot(OffGrey,      "Off")
-                    LegendDot(LeaveBlue,    "Leave")
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(20.dp)
+                    ) {
+                        AttendanceStatusPieChart(breakdown = breakdown)
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            LegendDot(PresentGreen, "Present · ${breakdown.present}")
+                            LegendDot(AbsentRed,    "Absent · ${breakdown.absent}")
+                            LegendDot(LeaveBlue,    "Leave · ${breakdown.leave}")
+                            LegendDot(OffGrey,      "Off · ${breakdown.off}")
+                        }
+                    }
+
+                    Spacer(Modifier.height(12.dp))
+                    HorizontalDivider(color = AttendrDivider)
+                    Spacer(Modifier.height(12.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        LegendDot(PresentGreen, "Present")
+                        LegendDot(AbsentRed,    "Absent")
+                        LegendDot(HolidayOrange, "Holiday")
+                        LegendDot(OffGrey,      "Off")
+                        LegendDot(LeaveBlue,    "Leave")
+                    }
                 }
             }
 
@@ -260,14 +282,17 @@ private fun EmployeeCalendarCell(
 ) {
     val isHoliday = data?.isHoliday == true
     val isWeekend = data?.isWeekend == true
+    val isBeforeJoin = data?.isBeforeJoin == true
 
     val cellBg = when {
+        isBeforeJoin -> Color.Transparent
         isToday   -> AttendrNavy.copy(alpha = 0.12f)
         isHoliday -> HolidayBg
         else      -> Color.Transparent
     }
 
     val dotColor = when {
+        isBeforeJoin -> Color.Transparent
         isFuture  -> Color.Transparent
         isHoliday -> HolidayOrange
         data?.status == "present" || data?.status == "late" -> PresentGreen
@@ -279,6 +304,7 @@ private fun EmployeeCalendarCell(
     }
 
     val textColor = when {
+        isBeforeJoin -> AttendrTextSecondary.copy(alpha = 0.35f)
         isToday   -> AttendrNavy
         isFuture  -> AttendrTextSecondary.copy(alpha = 0.5f)
         isHoliday -> Color(0xFF7B5800)
@@ -294,7 +320,7 @@ private fun EmployeeCalendarCell(
             .background(cellBg)
             .then(if (isToday) Modifier.border(1.dp, AttendrNavy.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
                   else Modifier)
-            .clickable(onClick = onClick),
+            .then(if (!isBeforeJoin) Modifier.clickable(onClick = onClick) else Modifier),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -331,9 +357,9 @@ private fun DaySheet(date: String, data: EmployeeDayData?) {
 
         if (data?.isHoliday == true) {
             Spacer(Modifier.height(6.dp))
-            Surface(shape = RoundedCornerShape(50), color = HolidayBg) {
+            Surface(shape = RoundedCornerShape(16.dp), color = HolidayBg) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
@@ -342,7 +368,8 @@ private fun DaySheet(date: String, data: EmployeeDayData?) {
                     Text(
                         data.holidayName ?: "Holiday",
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                        color = Color(0xFF7B5800)
+                        color = Color(0xFF7B5800),
+                        softWrap = true
                     )
                 }
             }
@@ -430,6 +457,49 @@ private fun LegendDot(color: Color, label: String) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
         Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(color))
         Text(label, style = MaterialTheme.typography.labelSmall, color = AttendrTextSecondary)
+    }
+}
+
+// ── Attendance breakdown pie chart ─────────────────────────────────────────────
+
+private data class AttendanceBreakdown(val present: Int, val absent: Int, val off: Int, val leave: Int)
+
+private fun attendanceBreakdown(dayData: Map<String, EmployeeDayData>): AttendanceBreakdown {
+    val today = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+    var present = 0; var absent = 0; var off = 0; var leave = 0
+    dayData.values.forEach { d ->
+        if (d.isBeforeJoin || d.date > today) return@forEach
+        when (d.status) {
+            "present", "late" -> present++
+            "absent" -> absent++
+            "leave" -> leave++
+            else -> off++
+        }
+    }
+    return AttendanceBreakdown(present, absent, off, leave)
+}
+
+@Composable
+private fun AttendanceStatusPieChart(breakdown: AttendanceBreakdown, modifier: Modifier = Modifier) {
+    val total = breakdown.present + breakdown.absent + breakdown.off + breakdown.leave
+    val slices = listOf(
+        breakdown.present to PresentGreen,
+        breakdown.absent to AbsentRed,
+        breakdown.leave to LeaveBlue,
+        breakdown.off to OffGrey
+    ).filter { it.first > 0 }
+
+    Canvas(modifier = modifier.size(64.dp)) {
+        if (total == 0 || slices.isEmpty()) {
+            drawArc(color = OffGrey.copy(alpha = 0.3f), startAngle = 0f, sweepAngle = 360f, useCenter = true)
+            return@Canvas
+        }
+        var startAngle = -90f
+        slices.forEach { (count, color) ->
+            val sweep = 360f * count / total
+            drawArc(color = color, startAngle = startAngle, sweepAngle = sweep, useCenter = true)
+            startAngle += sweep
+        }
     }
 }
 
