@@ -40,6 +40,7 @@ data class OtpResponse(val ok: Boolean, val message: String?)
 data class OtpVerifyResponse(val ok: Boolean, val pendingToken: String?, val fullName: String?, val error: String?)
 
 // Backend: POST /auth/employee/set-password → { ok, token, employee } (same shape as AuthResponse)
+// Also reused for admin forgot-password reset, where the response has `company` instead of `employee`.
 data class SetPasswordRequest(
     val pendingToken: String, val password: String,
     val confirmPassword: String, val deviceId: String? = null
@@ -60,7 +61,11 @@ data class EmployeeProfile(
     val photoUrl: String? = null,
     val company: EmployeeCompany?
 )
-data class AuthResponse(val ok: Boolean, val token: String?, val employee: EmployeeProfile?, val error: String?)
+data class AuthResponse(
+    val ok: Boolean, val token: String?,
+    val employee: EmployeeProfile?, val company: AdminCompany? = null,
+    val error: String?
+)
 
 // Backend: POST /auth/profile/photo (multipart, field name "photo") → { ok, photoUrl }
 data class PhotoUploadResponse(val ok: Boolean, val photoUrl: String?, val error: String?)

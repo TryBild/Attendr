@@ -79,10 +79,16 @@ class AuthRepository(context: Context) {
             if (res.isSuccessful && res.body()?.ok == true) {
                 val body = res.body()!!
                 body.token?.let { dataStore.saveToken(it) }
-                dataStore.saveUserKind("employee")
-                body.employee?.fullName?.let { dataStore.saveEmployeeName(it) }
-                body.employee?.company?.name?.let { dataStore.saveCompanyName(it) }
-                body.employee?.photoUrl?.let { dataStore.savePhotoUrl(it) }
+                if (body.company != null) {
+                    dataStore.saveUserKind("admin")
+                    dataStore.saveCompanyName(body.company.name)
+                    body.company.photoUrl?.let { dataStore.savePhotoUrl(it) }
+                } else {
+                    dataStore.saveUserKind("employee")
+                    body.employee?.fullName?.let { dataStore.saveEmployeeName(it) }
+                    body.employee?.company?.name?.let { dataStore.saveCompanyName(it) }
+                    body.employee?.photoUrl?.let { dataStore.savePhotoUrl(it) }
+                }
                 Result.success(body)
             } else {
                 val msg = runCatching {

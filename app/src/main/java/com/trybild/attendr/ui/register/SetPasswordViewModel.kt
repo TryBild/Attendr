@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
 sealed class SetPasswordState {
     object Idle : SetPasswordState()
     object Loading : SetPasswordState()
-    object Success : SetPasswordState()
+    data class Success(val isAdmin: Boolean, val setupComplete: Boolean) : SetPasswordState()
     data class Error(val message: String) : SetPasswordState()
 }
 
@@ -27,10 +27,12 @@ class SetPasswordViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             _state.value = SetPasswordState.Loading
             val result = repo.setEmployeePassword(pendingToken, password, confirmPassword, deviceId)
-            _state.value = if (result.isSuccess)
-                SetPasswordState.Success
-            else
+            _state.value = if (result.isSuccess) {
+                val company = result.getOrNull()?.company
+                SetPasswordState.Success(isAdmin = company != null, setupComplete = company?.setupComplete ?: false)
+            } else {
                 SetPasswordState.Error(result.exceptionOrNull()?.message ?: "Could not set password")
+            }
         }
     }
 

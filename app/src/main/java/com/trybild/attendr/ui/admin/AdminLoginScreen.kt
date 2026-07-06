@@ -141,7 +141,16 @@ fun AdminLoginScreen(navController: NavController) {
                     enabled = email.isNotBlank() && password.isNotBlank() && !isLoading
                 )
 
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(12.dp))
+
+                TextButton(
+                    onClick = { navController.navigate("forgot_password") },
+                    enabled = !isLoading
+                ) {
+                    Text("Forgot Password?", color = AttendrNavy)
+                }
+
+                Spacer(Modifier.height(4.dp))
 
                 TextButton(onClick = { navController.navigate("admin_register") }) {
                     Text(
