@@ -45,6 +45,11 @@ interface ApiService {
         @Header("Authorization") token: String
     ): Response<TodayAttendanceResponse>
 
+    @POST("attendance/notify-admin-geofence")
+    suspend fun notifyAdminGeofence(
+        @Header("Authorization") token: String
+    ): Response<GenericResponse>
+
     @GET("admin/employees")
     suspend fun getAdminEmployees(
         @Header("Authorization") token: String
