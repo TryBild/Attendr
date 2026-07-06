@@ -13,12 +13,10 @@ import kotlinx.coroutines.launch
 
 private val LANG_KEY = stringPreferencesKey("selected_language")
 
-val SUPPORTED_LANGUAGES = listOf(
-    "English", "हिन्दी", "मराठी", "ગુજરાતી", "বাংলা",
-    "தமிழ்", "తెలుగు", "ಕನ್ನಡ", "മലയാളം", "ਪੰਜਾਬੀ",
-    "اردو", "Odia", "Assamese", "Konkani", "Sanskrit",
-    "Manipuri", "नेपाली"
-)
+// Only list languages with real, working translations. No values-*/ locale folders exist yet
+// (only default English values/strings.xml) and setLanguage() below doesn't switch locale at
+// all — it just stores a display label. Full i18n is deferred; don't offer options that do nothing.
+val SUPPORTED_LANGUAGES = listOf("English")
 
 class WelcomeViewModel(app: Application) : AndroidViewModel(app) {
     private val store = app.dataStore
