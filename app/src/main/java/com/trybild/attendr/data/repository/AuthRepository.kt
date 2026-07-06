@@ -252,6 +252,21 @@ class AuthRepository(context: Context) {
         }
     }
 
+    suspend fun notifyAdminGeofence(): Result<GenericResponse> {
+        return try {
+            val token = dataStore.token.firstOrNull()
+                ?: return Result.failure(Exception("Not logged in"))
+            val res = api.notifyAdminGeofence("Bearer $token")
+            if (res.isSuccessful && res.body()?.ok == true) {
+                Result.success(res.body()!!)
+            } else {
+                Result.failure(Exception(res.body()?.error ?: "Could not notify your admin"))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception(e.message ?: "Network error"))
+        }
+    }
+
     suspend fun downloadMusterRollCsv(month: String): Result<ByteArray> {
         return try {
             val token = dataStore.token.firstOrNull()

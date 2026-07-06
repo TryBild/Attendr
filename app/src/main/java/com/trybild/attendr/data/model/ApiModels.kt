@@ -69,7 +69,8 @@ data class PhotoUploadResponse(val ok: Boolean, val photoUrl: String?, val error
 data class MarkAttendanceBody(val action: String, val latitude: Double?, val longitude: Double?, val mockDetected: Boolean = false, val deviceId: String? = null)
 
 // Backend success: { ok, action, time, status, geofence, distance }
-data class AttendanceResponse(val ok: Boolean, val action: String?, val time: String?, val error: String?)
+// Backend error may include a machine-readable `code` (e.g. "GEOFENCE_NOT_SET") + `message`.
+data class AttendanceResponse(val ok: Boolean, val action: String?, val time: String?, val error: String?, val code: String? = null, val message: String? = null)
 
 // Backend GET /attendance/today: single record { ok, status, checkInTime, checkOutTime, ... }
 data class TodayAttendanceResponse(

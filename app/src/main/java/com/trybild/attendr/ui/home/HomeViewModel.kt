@@ -35,6 +35,8 @@ sealed class HomeState {
     data class CheckedIn(val at: String) : HomeState()
     data class CheckedOut(val at: String) : HomeState()
     data class Error(val message: String) : HomeState()
+    // Org has no office location configured — not an error the employee can fix; offer to nudge admin.
+    data class GeofenceNotSet(val message: String) : HomeState()
 }
 
 sealed class GeofenceBadge {
@@ -68,6 +70,13 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
 
     private val _mockDetected = MutableStateFlow(false)
     val mockDetected: StateFlow<Boolean> = _mockDetected
+
+    // "Notify admin" (geofence not set) — loading flag + one-shot result message for a toast.
+    private val _notifyingAdmin = MutableStateFlow(false)
+    val notifyingAdmin: StateFlow<Boolean> = _notifyingAdmin
+
+    private val _notifyResult = MutableSharedFlow<String>()
+    val notifyResult: SharedFlow<String> = _notifyResult
 
     private var permissionGranted = false
     private var loadedGeofences: List<GeofenceItem> = emptyList()
@@ -228,14 +237,35 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
                     loadRecentActivity()
                 } else {
                     // 4xx bodies are in errorBody(), not body()
-                    val errMsg = runCatching {
-                        Gson().fromJson(res.errorBody()?.string(), AttendanceResponse::class.java)?.error
-                    }.getOrNull() ?: "Failed (${res.code()})"
-                    _state.value = HomeState.Error(errMsg)
+                    val parsed = runCatching {
+                        Gson().fromJson(res.errorBody()?.string(), AttendanceResponse::class.java)
+                    }.getOrNull()
+                    if (parsed?.code == "GEOFENCE_NOT_SET") {
+                        _state.value = HomeState.GeofenceNotSet(
+                            parsed.message ?: parsed.error
+                            ?: "Your admin hasn't set up the office location yet."
+                        )
+                    } else {
+                        _state.value = HomeState.Error(parsed?.error ?: "Failed (${res.code()})")
+                    }
                 }
             } catch (e: Exception) {
                 _state.value = HomeState.Error(e.message ?: "Error")
             }
+        }
+    }
+
+    fun notifyAdminGeofence() {
+        if (_notifyingAdmin.value) return
+        viewModelScope.launch {
+            _notifyingAdmin.value = true
+            val result = repo.notifyAdminGeofence()
+            _notifyingAdmin.value = false
+            _notifyResult.emit(
+                result.getOrNull()?.message
+                    ?: result.exceptionOrNull()?.message
+                    ?: "Could not notify your admin. Please try again."
+            )
         }
     }
 
