@@ -24,6 +24,17 @@ export const otpVerifyLimiter = rateLimit({
   },
 });
 
+export const photoUploadLimiter = rateLimit({
+  windowMs:        15 * 60 * 1000,
+  max:              20,
+  keyGenerator:    (req) => req.auth?.id || ipKeyGenerator(req),
+  standardHeaders: true,
+  legacyHeaders:   false,
+  handler: (_req, res) => {
+    res.status(429).json({ ok: false, error: "Too many photo uploads. Try again later." });
+  },
+});
+
 export const generalLimiter = rateLimit({
   windowMs:        15 * 60 * 1000,
   max:             200,

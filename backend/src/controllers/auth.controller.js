@@ -356,6 +356,7 @@ function buildEmployeeResponse(employee) {
     designation:  employee.designation,
     department:   employee.department?.name || null,
     joinedAt:     employee.joinedAt,
+    photoUrl:     employee.photoUrl || null,
     company: {
       name:   employee.company.name,
       teamId: employee.company.teamId,
@@ -428,6 +429,7 @@ export async function adminLogin(req, res) {
         city:         company.city,
         state:        company.state,
         setupComplete: company.setupComplete ?? false,
+        photoUrl:     company.photoUrl || null,
       },
     });
   } catch (e) {
@@ -558,7 +560,7 @@ export async function adminSetup(req, res) {
 export async function adminProfile(req, res) {
   try {
     const company = await Company.findById(req.auth.companyId)
-      .select("name teamId adminName phone setupComplete workDays workStartTime workEndTime");
+      .select("name teamId adminName phone setupComplete workDays workStartTime workEndTime photoUrl");
     if (!company) return err(res, "Company not found", 404);
 
     return res.json({
@@ -571,6 +573,7 @@ export async function adminProfile(req, res) {
       workDays:      company.workDays ?? [],
       workStartTime: company.workStartTime,
       workEndTime:   company.workEndTime,
+      photoUrl:      company.photoUrl || null,
     });
   } catch (e) {
     console.error(e);

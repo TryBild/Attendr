@@ -4,7 +4,7 @@ data class AdminLoginRequest(val email: String, val password: String)
 data class AdminCompany(
     val id: String, val name: String, val teamId: String,
     val plan: String, val city: String?, val state: String?,
-    val setupComplete: Boolean = false
+    val setupComplete: Boolean = false, val photoUrl: String? = null
 )
 data class AdminLoginResponse(val ok: Boolean, val token: String?, val company: AdminCompany?, val error: String?)
 
@@ -27,6 +27,7 @@ data class AdminProfileResponse(
     val orgId: String?, val orgName: String?, val adminName: String?,
     val phone: String?,
     val workDays: List<String>?, val workStartTime: String?, val workEndTime: String?,
+    val photoUrl: String? = null,
     val error: String?
 )
 
@@ -56,9 +57,13 @@ data class EmployeeProfile(
     val designation: String?,
     val department: String?,
     val joinedAt: String?,
+    val photoUrl: String? = null,
     val company: EmployeeCompany?
 )
 data class AuthResponse(val ok: Boolean, val token: String?, val employee: EmployeeProfile?, val error: String?)
+
+// Backend: POST /auth/profile/photo (multipart, field name "photo") → { ok, photoUrl }
+data class PhotoUploadResponse(val ok: Boolean, val photoUrl: String?, val error: String?)
 // Body must match backend: const { latitude, longitude, action } = req.body
 // action values must be "checkin" or "checkout" (not "in"/"out")
 data class MarkAttendanceBody(val action: String, val latitude: Double?, val longitude: Double?, val mockDetected: Boolean = false, val deviceId: String? = null)

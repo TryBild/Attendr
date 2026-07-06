@@ -118,23 +118,29 @@ fun AdminRegisterScreen(navController: NavController) {
                         color = AttendrTextSecondary
                     )
                     Spacer(Modifier.height(12.dp))
-                    Text(
-                        registeredOrgId,
-                        style = MaterialTheme.typography.displayLarge.copy(
-                            fontWeight = FontWeight.Bold
-                        ),
-                        color = AttendrNavy,
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    OutlinedButton(
-                        onClick = {
-                            clipboardManager.setText(AnnotatedString(registeredOrgId))
-                            copiedToClipboard = true
-                        },
-                        modifier = Modifier.fillMaxWidth()
+                    OutlinedCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+                        colors = CardDefaults.outlinedCardColors(containerColor = AttendrSurface),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, AttendrBorder)
                     ) {
-                        Text(if (copiedToClipboard) "Copied!" else "Copy Org ID")
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                registeredOrgId,
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                                color = AttendrNavy,
+                                modifier = Modifier.weight(1f)
+                            )
+                            TextButton(onClick = {
+                                clipboardManager.setText(AnnotatedString(registeredOrgId))
+                                copiedToClipboard = true
+                            }) {
+                                Text(if (copiedToClipboard) "Copied!" else "Copy")
+                            }
+                        }
                     }
                     Spacer(Modifier.height(12.dp))
                     Text(
@@ -224,7 +230,7 @@ fun AdminRegisterScreen(navController: NavController) {
                     value = orgName,
                     onValueChange = { orgName = it; orgNameError = ""; serverError = "" },
                     label = "Organization Name",
-                    placeholder = "e.g. Acme Corp",
+                    placeholder = "Your company name",
                     errorText = orgNameError,
                     enabled = !isLoading
                 )
@@ -236,7 +242,7 @@ fun AdminRegisterScreen(navController: NavController) {
                     value = adminName,
                     onValueChange = { adminName = it; adminNameError = ""; serverError = "" },
                     label = "Your Full Name",
-                    placeholder = "e.g. Rahul Sharma",
+                    placeholder = "Full name",
                     errorText = adminNameError,
                     enabled = !isLoading
                 )
@@ -248,7 +254,7 @@ fun AdminRegisterScreen(navController: NavController) {
                     value = email,
                     onValueChange = { email = it; emailError = ""; serverError = "" },
                     label = "Email",
-                    placeholder = "admin@company.com",
+                    placeholder = "you@example.com",
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                     errorText = emailError,
                     enabled = !isLoading
@@ -286,7 +292,7 @@ fun AdminRegisterScreen(navController: NavController) {
                     value = city,
                     onValueChange = { city = it; cityError = ""; serverError = "" },
                     label = "City",
-                    placeholder = "e.g. Mumbai",
+                    placeholder = "Your city",
                     errorText = cityError,
                     enabled = !isLoading
                 )

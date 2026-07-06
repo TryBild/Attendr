@@ -14,7 +14,7 @@ const companySchema = new mongoose.Schema({
   state:         { type: String },
   orgSize:       { type: String, enum: ["1-10", "11-50", "51-200", "200+"] },
   isActive:      { type: Boolean, default: true },
-  plan:          { type: String, enum: ["free", "starter", "pro"], default: "free" },
+  plan:          { type: String, enum: ["free", "monthly", "yearly"], default: "free" },
   maxEmployees:  { type: Number, default: 25 },
   setupComplete: { type: Boolean, default: false },
   industry:      { type: String },
@@ -25,6 +25,7 @@ const companySchema = new mongoose.Schema({
   referralSource:{ type: String },
   whatsappAdminNumbers: { type: [String], default: [] },
   holidays:      { type: [String], default: [] },
+  photoUrl:      { type: String, default: null },
 }, { timestamps: true });
 
 export default mongoose.model("Company", companySchema);

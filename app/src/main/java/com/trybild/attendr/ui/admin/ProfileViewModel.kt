@@ -25,6 +25,9 @@ data class AdminProfileUiState(
     val orgName: String = "",
     val orgId: String = "",
 
+    val photoUrl: String? = null,
+    val uploadingPhoto: Boolean = false,
+
     // Section 3 — company settings
     val workDays: Set<String> = emptySet(),
     val workStartTime: String = "09:00",
@@ -84,6 +87,7 @@ class ProfileViewModel(app: Application) : AndroidViewModel(app) {
                         mobile = p.phone ?: "",
                         orgName = p.orgName ?: cachedOrgName,
                         orgId = p.orgId ?: cachedOrgId,
+                        photoUrl = p.photoUrl,
                         workDays = days,
                         workStartTime = start,
                         workEndTime = end,
@@ -163,6 +167,18 @@ class ProfileViewModel(app: Application) : AndroidViewModel(app) {
                 _state.update {
                     it.copy(saving = false, saveError = result.exceptionOrNull()?.message ?: "Could not save changes")
                 }
+            }
+        }
+    }
+
+    fun uploadPhoto(imageBytes: ByteArray) {
+        _state.update { it.copy(uploadingPhoto = true) }
+        viewModelScope.launch {
+            val result = repo.uploadProfilePhoto(imageBytes)
+            if (result.isSuccess) {
+                _state.update { it.copy(uploadingPhoto = false, photoUrl = result.getOrNull(), saveMessage = "Photo updated") }
+            } else {
+                _state.update { it.copy(uploadingPhoto = false, saveError = result.exceptionOrNull()?.message ?: "Could not upload photo") }
             }
         }
     }

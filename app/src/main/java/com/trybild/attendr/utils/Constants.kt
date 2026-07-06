@@ -8,4 +8,5 @@ object Constants {
     const val COMPANY_NAME_KEY = "company_name"
     const val SETUP_COMPLETE_KEY = "setup_complete"
     const val ORG_ID_KEY = "org_id"
+    const val PHOTO_URL_KEY = "photo_url"
 }
