@@ -1,5 +1,10 @@
 package com.trybild.attendr.ui.employee
 
+import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -19,6 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import com.trybild.attendr.data.local.TokenDataStore
 import com.trybild.attendr.data.model.GeofenceItem
 import com.trybild.attendr.data.repository.AuthRepository
@@ -26,7 +32,10 @@ import com.trybild.attendr.ui.components.AttendrEmptyState
 import com.trybild.attendr.ui.legal.AttendrUrls
 import com.trybild.attendr.ui.legal.LegalMenuRow
 import com.trybild.attendr.ui.theme.*
+import com.trybild.attendr.utils.ImageUtils
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun ProfileScreen(outerNavController: NavController) {
@@ -36,11 +45,33 @@ fun ProfileScreen(outerNavController: NavController) {
 
     val employeeName by dataStore.employeeName.collectAsStateWithLifecycle(initialValue = null)
     val companyName  by dataStore.companyName.collectAsStateWithLifecycle(initialValue = null)
+    val photoUrl     by dataStore.photoUrl.collectAsStateWithLifecycle(initialValue = null)
 
     val repo = remember { AuthRepository(context) }
     var geofences by remember { mutableStateOf<List<GeofenceItem>>(emptyList()) }
+    var uploadingPhoto by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         repo.getGeofences().getOrNull()?.geofences?.let { geofences = it }
+    }
+
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            scope.launch {
+                uploadingPhoto = true
+                val bytes = withContext(Dispatchers.Default) { ImageUtils.compressImageFromUri(context, uri) }
+                if (bytes != null) {
+                    val result = repo.uploadProfilePhoto(bytes)
+                    if (result.isFailure) {
+                        Toast.makeText(context, result.exceptionOrNull()?.message ?: "Could not upload photo", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    Toast.makeText(context, "Could not read selected image", Toast.LENGTH_SHORT).show()
+                }
+                uploadingPhoto = false
+            }
+        }
     }
 
     Column(
@@ -61,8 +92,10 @@ fun ProfileScreen(outerNavController: NavController) {
 
         Box(
             contentAlignment = Alignment.BottomEnd,
-            modifier = Modifier.clickable {
-                android.widget.Toast.makeText(context, "Photo upload isn't available yet", android.widget.Toast.LENGTH_SHORT).show()
+            modifier = Modifier.clickable(enabled = !uploadingPhoto) {
+                photoPickerLauncher.launch(
+                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                )
             }
         ) {
             Box(
@@ -72,11 +105,27 @@ fun ProfileScreen(outerNavController: NavController) {
                     .background(AttendrNavy),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    initials,
-                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                    color = Color.White
-                )
+                if (photoUrl != null) {
+                    AsyncImage(
+                        model = photoUrl,
+                        contentDescription = "Profile photo",
+                        modifier = Modifier.fillMaxSize().clip(CircleShape)
+                    )
+                } else {
+                    Text(
+                        initials,
+                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                        color = Color.White
+                    )
+                }
+                if (uploadingPhoto) {
+                    Box(
+                        modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.4f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                    }
+                }
             }
             Box(
                 modifier = Modifier

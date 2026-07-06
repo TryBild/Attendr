@@ -1,6 +1,7 @@
 package com.trybild.attendr.data.api
 
 import com.trybild.attendr.data.model.*
+import okhttp3.MultipartBody
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -123,4 +124,11 @@ interface ApiService {
     suspend fun cancelSubscription(
         @Header("Authorization") token: String
     ): Response<GenericResponse>
+
+    @Multipart
+    @POST("auth/profile/photo")
+    suspend fun uploadProfilePhoto(
+        @Header("Authorization") token: String,
+        @Part photo: MultipartBody.Part
+    ): Response<PhotoUploadResponse>
 }

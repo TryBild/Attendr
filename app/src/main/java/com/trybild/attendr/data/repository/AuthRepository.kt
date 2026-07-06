@@ -6,6 +6,9 @@ import com.trybild.attendr.data.api.RetrofitClient
 import com.trybild.attendr.data.local.TokenDataStore
 import com.trybild.attendr.data.model.*
 import kotlinx.coroutines.flow.firstOrNull
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
 
 class AuthRepository(context: Context) {
     private val api = RetrofitClient.api
@@ -19,6 +22,7 @@ class AuthRepository(context: Context) {
                 body.token?.let { dataStore.saveToken(it) }
                 dataStore.saveUserKind("admin")
                 body.company?.name?.let { dataStore.saveCompanyName(it) }
+                body.company?.photoUrl?.let { dataStore.savePhotoUrl(it) }
                 Result.success(body)
             } else {
                 val msg = res.body()?.error
@@ -78,6 +82,7 @@ class AuthRepository(context: Context) {
                 dataStore.saveUserKind("employee")
                 body.employee?.fullName?.let { dataStore.saveEmployeeName(it) }
                 body.employee?.company?.name?.let { dataStore.saveCompanyName(it) }
+                body.employee?.photoUrl?.let { dataStore.savePhotoUrl(it) }
                 Result.success(body)
             } else {
                 val msg = runCatching {
@@ -99,6 +104,7 @@ class AuthRepository(context: Context) {
                 dataStore.saveUserKind("employee")
                 body.employee?.fullName?.let { dataStore.saveEmployeeName(it) }
                 body.employee?.company?.name?.let { dataStore.saveCompanyName(it) }
+                body.employee?.photoUrl?.let { dataStore.savePhotoUrl(it) }
                 Result.success(body)
             } else {
                 // 401/403/404 bodies are in errorBody() as { ok:false, error }; surface the exact message.
@@ -390,9 +396,32 @@ class AuthRepository(context: Context) {
                 val body = res.body()!!
                 dataStore.saveSetupComplete(body.setupComplete)
                 body.orgId?.let { dataStore.saveOrgId(it) }
+                body.photoUrl?.let { dataStore.savePhotoUrl(it) }
                 Result.success(body)
             } else {
                 val msg = res.body()?.error ?: "Could not fetch profile"
+                Result.failure(Exception(msg))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception(e.message ?: "Network error"))
+        }
+    }
+
+    suspend fun uploadProfilePhoto(imageBytes: ByteArray): Result<String> {
+        return try {
+            val token = dataStore.token.firstOrNull()
+                ?: return Result.failure(Exception("Not logged in"))
+            val requestBody = imageBytes.toRequestBody("image/jpeg".toMediaTypeOrNull())
+            val part = MultipartBody.Part.createFormData("photo", "profile.jpg", requestBody)
+            val res = api.uploadProfilePhoto("Bearer $token", part)
+            if (res.isSuccessful && res.body()?.ok == true && res.body()?.photoUrl != null) {
+                val url = res.body()!!.photoUrl!!
+                dataStore.savePhotoUrl(url)
+                Result.success(url)
+            } else {
+                val msg = runCatching {
+                    Gson().fromJson(res.errorBody()?.string(), PhotoUploadResponse::class.java)?.error
+                }.getOrNull() ?: res.body()?.error ?: "Could not upload photo"
                 Result.failure(Exception(msg))
             }
         } catch (e: Exception) {
