@@ -5,17 +5,34 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import java.io.ByteArrayOutputStream
+import java.io.IOException
 
 object ImageUtils {
     private const val MAX_DIMENSION = 1024
     private const val JPEG_QUALITY = 80
 
-    /** Downscales the image at [uri] to at most 1024px on its longest side and re-encodes it as JPEG. */
-    fun compressImageFromUri(context: Context, uri: Uri): ByteArray? {
-        val resolver = context.contentResolver
+    /** Thrown by [compressImageFromUri] with a message that's safe to show directly to the user. */
+    class ImageReadException(message: String) : IOException(message)
+
+    /**
+     * Downscales the image at [uri] to at most 1024px on its longest side and re-encodes it as JPEG.
+     * Reads the URI into memory once — some picker providers (e.g. Google Photos-backed picker
+     * results) only allow a single openInputStream() read per selection, so decoding bounds and
+     * pixels from two separate stream opens (the old approach) intermittently failed with a null
+     * stream on the second call, surfacing as a generic "Could not read selected image".
+     */
+    fun compressImageFromUri(context: Context, uri: Uri): ByteArray {
+        val raw = try {
+            context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+        } catch (e: IOException) {
+            null
+        } ?: throw ImageReadException("Couldn't open that image — try a different one")
+
+        if (raw.isEmpty())
+            throw ImageReadException("Couldn't open that image — try a different one")
 
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) } ?: return null
+        BitmapFactory.decodeByteArray(raw, 0, raw.size, bounds)
 
         var sampleSize = 1
         val largestSide = maxOf(bounds.outWidth, bounds.outHeight)
@@ -24,9 +41,10 @@ object ImageUtils {
         }
 
         val options = BitmapFactory.Options().apply { inSampleSize = sampleSize }
-        val bitmap = resolver.openInputStream(uri)?.use {
-            BitmapFactory.decodeStream(it, null, options)
-        } ?: return null
+        val bitmap = BitmapFactory.decodeByteArray(raw, 0, raw.size, options)
+            // Fallback: some formats fail to decode with inSampleSize set but decode fine at full resolution
+            ?: BitmapFactory.decodeByteArray(raw, 0, raw.size)
+            ?: throw ImageReadException("That file doesn't look like a valid image")
 
         val scaled = scaleDownIfNeeded(bitmap)
 
