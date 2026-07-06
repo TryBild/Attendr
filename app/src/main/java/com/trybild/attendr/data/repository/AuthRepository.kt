@@ -9,10 +9,33 @@ import kotlinx.coroutines.flow.firstOrNull
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import retrofit2.Response
+import java.io.IOException
+import java.net.SocketTimeoutException
 
 class AuthRepository(context: Context) {
     private val api = RetrofitClient.api
     private val dataStore = TokenDataStore(context)
+
+    // res.body() is always null for non-2xx Retrofit responses — the real backend
+    // error JSON only lives in errorBody(). 401/402 get distinct, actionable messages
+    // so failures are debuggable instead of collapsing into one generic string.
+    private fun errorMessage(res: Response<*>, fallback: String): String {
+        val parsed = runCatching {
+            Gson().fromJson(res.errorBody()?.string(), GenericResponse::class.java)?.error
+        }.getOrNull()
+        return when (res.code()) {
+            401 -> "Session expired. Please log in again."
+            402 -> parsed ?: "Subscription expired or required. Please subscribe to continue."
+            else -> parsed ?: fallback
+        }
+    }
+
+    private fun networkErrorMessage(e: Exception): String = when (e) {
+        is SocketTimeoutException -> "Request timed out. Server may be waking up — please try again in a moment."
+        is IOException -> "Network error. Check your connection and try again."
+        else -> e.message ?: "Something went wrong. Please try again."
+    }
 
     suspend fun adminLogin(email: String, password: String): Result<AdminLoginResponse> {
         return try {
@@ -25,13 +48,10 @@ class AuthRepository(context: Context) {
                 body.company?.photoUrl?.let { dataStore.savePhotoUrl(it) }
                 Result.success(body)
             } else {
-                val msg = res.body()?.error
-                    ?: res.errorBody()?.string()
-                    ?: "Login failed"
-                Result.failure(Exception(msg))
+                Result.failure(Exception(errorMessage(res, "Login failed")))
             }
         } catch (e: Exception) {
-            Result.failure(Exception(e.message ?: "Network error"))
+            Result.failure(Exception(networkErrorMessage(e)))
         }
     }
 
@@ -43,14 +63,10 @@ class AuthRepository(context: Context) {
             if (res.isSuccessful && res.body()?.ok == true) {
                 Result.success(res.body()!!)
             } else {
-                // Error bodies come back as { ok:false, error } in errorBody()
-                val msg = runCatching {
-                    Gson().fromJson(res.errorBody()?.string(), GenericResponse::class.java)?.error
-                }.getOrNull() ?: res.body()?.message ?: "Could not send OTP. Check your details and try again."
-                Result.failure(Exception(msg))
+                Result.failure(Exception(errorMessage(res, "Could not send OTP. Check your details and try again.")))
             }
         } catch (e: Exception) {
-            Result.failure(Exception(e.message ?: "Network error"))
+            Result.failure(Exception(networkErrorMessage(e)))
         }
     }
 
@@ -61,13 +77,10 @@ class AuthRepository(context: Context) {
             if (res.isSuccessful && res.body()?.ok == true && res.body()?.pendingToken != null) {
                 Result.success(res.body()!!)
             } else {
-                val msg = runCatching {
-                    Gson().fromJson(res.errorBody()?.string(), OtpVerifyResponse::class.java)?.error
-                }.getOrNull() ?: res.body()?.error ?: "Invalid OTP. Please try again."
-                Result.failure(Exception(msg))
+                Result.failure(Exception(errorMessage(res, "Invalid OTP. Please try again.")))
             }
         } catch (e: Exception) {
-            Result.failure(Exception(e.message ?: "Network error"))
+            Result.failure(Exception(networkErrorMessage(e)))
         }
     }
 
@@ -85,13 +98,10 @@ class AuthRepository(context: Context) {
                 body.employee?.photoUrl?.let { dataStore.savePhotoUrl(it) }
                 Result.success(body)
             } else {
-                val msg = runCatching {
-                    Gson().fromJson(res.errorBody()?.string(), AuthResponse::class.java)?.error
-                }.getOrNull() ?: res.body()?.error ?: "Could not set password. Please try again."
-                Result.failure(Exception(msg))
+                Result.failure(Exception(errorMessage(res, "Could not set password. Please try again.")))
             }
         } catch (e: Exception) {
-            Result.failure(Exception(e.message ?: "Network error"))
+            Result.failure(Exception(networkErrorMessage(e)))
         }
     }
 
@@ -107,14 +117,10 @@ class AuthRepository(context: Context) {
                 body.employee?.photoUrl?.let { dataStore.savePhotoUrl(it) }
                 Result.success(body)
             } else {
-                // 401/403/404 bodies are in errorBody() as { ok:false, error }; surface the exact message.
-                val msg = runCatching {
-                    Gson().fromJson(res.errorBody()?.string(), AuthResponse::class.java)?.error
-                }.getOrNull() ?: res.body()?.error ?: "Login failed"
-                Result.failure(Exception(msg))
+                Result.failure(Exception(errorMessage(res, "Login failed")))
             }
         } catch (e: Exception) {
-            Result.failure(Exception(e.message ?: "Network error"))
+            Result.failure(Exception(networkErrorMessage(e)))
         }
     }
 
@@ -134,13 +140,10 @@ class AuthRepository(context: Context) {
                 body.orgId?.let { dataStore.saveOrgId(it) }
                 Result.success(body)
             } else {
-                val msg = res.body()?.error
-                    ?: res.errorBody()?.string()
-                    ?: "Registration failed"
-                Result.failure(Exception(msg))
+                Result.failure(Exception(errorMessage(res, "Registration failed")))
             }
         } catch (e: Exception) {
-            Result.failure(Exception(e.message ?: "Network error"))
+            Result.failure(Exception(networkErrorMessage(e)))
         }
     }
 
@@ -169,11 +172,10 @@ class AuthRepository(context: Context) {
                 dataStore.saveSetupComplete(true)
                 Result.success(res.body()!!)
             } else {
-                val msg = res.body()?.error ?: "Setup failed"
-                Result.failure(Exception(msg))
+                Result.failure(Exception(errorMessage(res, "Setup failed")))
             }
         } catch (e: Exception) {
-            Result.failure(Exception(e.message ?: "Network error"))
+            Result.failure(Exception(networkErrorMessage(e)))
         }
     }
 
@@ -185,10 +187,10 @@ class AuthRepository(context: Context) {
             if (res.isSuccessful && res.body()?.ok == true) {
                 Result.success(res.body()!!)
             } else {
-                Result.failure(Exception(res.body()?.error ?: "Could not fetch employees"))
+                Result.failure(Exception(errorMessage(res, "Could not fetch employees")))
             }
         } catch (e: Exception) {
-            Result.failure(Exception(e.message ?: "Network error"))
+            Result.failure(Exception(networkErrorMessage(e)))
         }
     }
 
@@ -200,10 +202,10 @@ class AuthRepository(context: Context) {
             if (res.isSuccessful && res.body()?.ok == true) {
                 Result.success(res.body()!!)
             } else {
-                Result.failure(Exception(res.body()?.error ?: "Could not fetch dashboard"))
+                Result.failure(Exception(errorMessage(res, "Could not fetch dashboard")))
             }
         } catch (e: Exception) {
-            Result.failure(Exception(e.message ?: "Network error"))
+            Result.failure(Exception(networkErrorMessage(e)))
         }
     }
 
@@ -215,10 +217,10 @@ class AuthRepository(context: Context) {
             if (res.isSuccessful && res.body()?.ok == true) {
                 Result.success(res.body()!!)
             } else {
-                Result.failure(Exception(res.body()?.error ?: "Could not fetch register"))
+                Result.failure(Exception(errorMessage(res, "Could not fetch register")))
             }
         } catch (e: Exception) {
-            Result.failure(Exception(e.message ?: "Network error"))
+            Result.failure(Exception(networkErrorMessage(e)))
         }
     }
 
@@ -230,10 +232,10 @@ class AuthRepository(context: Context) {
             if (res.isSuccessful && res.body()?.ok == true) {
                 Result.success(res.body()!!)
             } else {
-                Result.failure(Exception(res.body()?.error ?: "Could not fetch attendance"))
+                Result.failure(Exception(errorMessage(res, "Could not fetch attendance")))
             }
         } catch (e: Exception) {
-            Result.failure(Exception(e.message ?: "Network error"))
+            Result.failure(Exception(networkErrorMessage(e)))
         }
     }
 
@@ -245,10 +247,10 @@ class AuthRepository(context: Context) {
             if (res.isSuccessful && res.body()?.ok == true) {
                 Result.success(res.body()!!)
             } else {
-                Result.failure(Exception(res.body()?.error ?: "Could not fetch geofences"))
+                Result.failure(Exception(errorMessage(res, "Could not fetch geofences")))
             }
         } catch (e: Exception) {
-            Result.failure(Exception(e.message ?: "Network error"))
+            Result.failure(Exception(networkErrorMessage(e)))
         }
     }
 
@@ -260,10 +262,10 @@ class AuthRepository(context: Context) {
             if (res.isSuccessful && res.body()?.ok == true) {
                 Result.success(res.body()!!)
             } else {
-                Result.failure(Exception(res.body()?.error ?: "Could not notify your admin"))
+                Result.failure(Exception(errorMessage(res, "Could not notify your admin")))
             }
         } catch (e: Exception) {
-            Result.failure(Exception(e.message ?: "Network error"))
+            Result.failure(Exception(networkErrorMessage(e)))
         }
     }
 
@@ -275,10 +277,10 @@ class AuthRepository(context: Context) {
             if (res.isSuccessful && res.body() != null) {
                 Result.success(res.body()!!.bytes())
             } else {
-                Result.failure(Exception("Could not download muster roll"))
+                Result.failure(Exception(errorMessage(res, "Could not download muster roll")))
             }
         } catch (e: Exception) {
-            Result.failure(Exception(e.message ?: "Network error"))
+            Result.failure(Exception(networkErrorMessage(e)))
         }
     }
 
@@ -290,10 +292,10 @@ class AuthRepository(context: Context) {
             if (res.isSuccessful && res.body()?.ok == true) {
                 Result.success(res.body()!!)
             } else {
-                Result.failure(Exception(res.body()?.error ?: "Could not reset device"))
+                Result.failure(Exception(errorMessage(res, "Could not reset device")))
             }
         } catch (e: Exception) {
-            Result.failure(Exception(e.message ?: "Network error"))
+            Result.failure(Exception(networkErrorMessage(e)))
         }
     }
 
@@ -305,10 +307,10 @@ class AuthRepository(context: Context) {
             if (res.isSuccessful && res.body()?.ok == true) {
                 Result.success(res.body()!!)
             } else {
-                Result.failure(Exception(res.body()?.error ?: "Could not fetch geofences"))
+                Result.failure(Exception(errorMessage(res, "Could not fetch geofences")))
             }
         } catch (e: Exception) {
-            Result.failure(Exception(e.message ?: "Network error"))
+            Result.failure(Exception(networkErrorMessage(e)))
         }
     }
 
@@ -320,10 +322,10 @@ class AuthRepository(context: Context) {
             if (res.isSuccessful && res.body()?.ok == true) {
                 Result.success(res.body()!!)
             } else {
-                Result.failure(Exception(res.body()?.error ?: "Could not create geofence"))
+                Result.failure(Exception(errorMessage(res, "Could not create geofence")))
             }
         } catch (e: Exception) {
-            Result.failure(Exception(e.message ?: "Network error"))
+            Result.failure(Exception(networkErrorMessage(e)))
         }
     }
 
@@ -335,10 +337,10 @@ class AuthRepository(context: Context) {
             if (res.isSuccessful && res.body()?.ok == true) {
                 Result.success(res.body()!!)
             } else {
-                Result.failure(Exception(res.body()?.error ?: "Could not update geofence"))
+                Result.failure(Exception(errorMessage(res, "Could not update geofence")))
             }
         } catch (e: Exception) {
-            Result.failure(Exception(e.message ?: "Network error"))
+            Result.failure(Exception(networkErrorMessage(e)))
         }
     }
 
@@ -350,10 +352,10 @@ class AuthRepository(context: Context) {
             if (res.isSuccessful) {
                 Result.success(GenericResponse(ok = true, message = "Deleted", error = null))
             } else {
-                Result.failure(Exception("Could not delete geofence"))
+                Result.failure(Exception(errorMessage(res, "Could not delete geofence")))
             }
         } catch (e: Exception) {
-            Result.failure(Exception(e.message ?: "Network error"))
+            Result.failure(Exception(networkErrorMessage(e)))
         }
     }
 
@@ -365,10 +367,10 @@ class AuthRepository(context: Context) {
             if (res.isSuccessful && res.body()?.ok == true) {
                 Result.success(res.body()!!)
             } else {
-                Result.failure(Exception(res.body()?.error ?: "Could not fetch billing status"))
+                Result.failure(Exception(errorMessage(res, "Could not fetch billing status")))
             }
         } catch (e: Exception) {
-            Result.failure(Exception(e.message ?: "Network error"))
+            Result.failure(Exception(networkErrorMessage(e)))
         }
     }
 
@@ -380,10 +382,10 @@ class AuthRepository(context: Context) {
             if (res.isSuccessful && res.body()?.ok == true) {
                 Result.success(res.body()!!)
             } else {
-                Result.failure(Exception(res.body()?.error ?: "Could not create subscription"))
+                Result.failure(Exception(errorMessage(res, "Could not create subscription")))
             }
         } catch (e: Exception) {
-            Result.failure(Exception(e.message ?: "Network error"))
+            Result.failure(Exception(networkErrorMessage(e)))
         }
     }
 
@@ -395,10 +397,10 @@ class AuthRepository(context: Context) {
             if (res.isSuccessful && res.body()?.ok == true) {
                 Result.success(res.body()!!)
             } else {
-                Result.failure(Exception(res.body()?.error ?: "Could not cancel subscription"))
+                Result.failure(Exception(errorMessage(res, "Could not cancel subscription")))
             }
         } catch (e: Exception) {
-            Result.failure(Exception(e.message ?: "Network error"))
+            Result.failure(Exception(networkErrorMessage(e)))
         }
     }
 
@@ -414,11 +416,10 @@ class AuthRepository(context: Context) {
                 body.photoUrl?.let { dataStore.savePhotoUrl(it) }
                 Result.success(body)
             } else {
-                val msg = res.body()?.error ?: "Could not fetch profile"
-                Result.failure(Exception(msg))
+                Result.failure(Exception(errorMessage(res, "Could not fetch profile")))
             }
         } catch (e: Exception) {
-            Result.failure(Exception(e.message ?: "Network error"))
+            Result.failure(Exception(networkErrorMessage(e)))
         }
     }
 
@@ -434,13 +435,10 @@ class AuthRepository(context: Context) {
                 dataStore.savePhotoUrl(url)
                 Result.success(url)
             } else {
-                val msg = runCatching {
-                    Gson().fromJson(res.errorBody()?.string(), PhotoUploadResponse::class.java)?.error
-                }.getOrNull() ?: res.body()?.error ?: "Could not upload photo"
-                Result.failure(Exception(msg))
+                Result.failure(Exception(errorMessage(res, "Could not upload photo")))
             }
         } catch (e: Exception) {
-            Result.failure(Exception(e.message ?: "Network error"))
+            Result.failure(Exception(networkErrorMessage(e)))
         }
     }
 }
