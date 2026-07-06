@@ -54,14 +54,10 @@ fun AdminSetupScreen(navController: NavController) {
     val industries = listOf("IT / Software", "Manufacturing", "Retail", "Logistics", "Other")
     val allDays = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
     val timezones = listOf(
-        "Asia/Kolkata" to "IST (UTC+5:30)",
-        "Asia/Dubai" to "GST (UTC+4:00)",
-        "Asia/Singapore" to "SGT (UTC+8:00)",
-        "Asia/Bangkok" to "ICT (UTC+7:00)",
-        "Asia/Kuala_Lumpur" to "MYT (UTC+8:00)",
-        "Europe/London" to "GMT (UTC+0:00)",
-        "America/New_York" to "EST (UTC-5:00)",
-        "America/Los_Angeles" to "PST (UTC-8:00)",
+        "Asia/Kolkata" to "India Standard Time (IST)",
+        "Asia/Dubai" to "Gulf Standard Time (GST)",
+        "Asia/Singapore" to "Singapore Time (SGT)",
+        "Europe/London" to "Greenwich Mean Time (GMT)",
     )
     val referralOptions = listOf("Google Search", "Friend / Colleague", "Social Media", "Other")
 
@@ -281,6 +277,12 @@ fun AdminSetupScreen(navController: NavController) {
                 },
                 errorText = "",
                 enabled = !isLoading
+            )
+            Text(
+                "Most Indian businesses use IST — change only if your team works from another region.",
+                style = MaterialTheme.typography.labelSmall,
+                color = AttendrTextSecondary,
+                modifier = Modifier.padding(start = 4.dp, top = 4.dp)
             )
 
             Spacer(Modifier.height(20.dp))
