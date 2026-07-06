@@ -19,6 +19,8 @@ import com.trybild.attendr.data.local.TokenDataStore
 import com.trybild.attendr.data.model.GeofenceItem
 import com.trybild.attendr.data.repository.AuthRepository
 import com.trybild.attendr.ui.components.AttendrEmptyState
+import com.trybild.attendr.ui.legal.AttendrUrls
+import com.trybild.attendr.ui.legal.LegalMenuRow
 import com.trybild.attendr.ui.theme.*
 import kotlinx.coroutines.launch
 
@@ -129,6 +131,14 @@ fun ProfileScreen(outerNavController: NavController) {
         }
 
         Spacer(Modifier.height(24.dp))
+
+        Text("Legal", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold), color = AttendrTextPrimary)
+        LegalMenuRow(label = "Privacy Policy", url = AttendrUrls.PRIVACY)
+        LegalMenuRow(label = "Terms of Service", url = AttendrUrls.TERMS)
+        LegalMenuRow(label = "Contact Support", url = AttendrUrls.CONTACT)
+        LegalMenuRow(label = "Delete Account", url = AttendrUrls.DELETE_ACCOUNT, destructive = true)
+
+        Spacer(Modifier.height(12.dp))
 
         OutlinedButton(
             onClick = {

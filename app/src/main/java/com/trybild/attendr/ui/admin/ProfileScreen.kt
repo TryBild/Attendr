@@ -30,6 +30,8 @@ import androidx.navigation.NavController
 import com.trybild.attendr.ui.components.AttendrBackground
 import com.trybild.attendr.ui.components.AttendrButton
 import com.trybild.attendr.ui.components.AttendrTextField
+import com.trybild.attendr.ui.legal.AttendrUrls
+import com.trybild.attendr.ui.legal.LegalMenuRow
 import com.trybild.attendr.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -388,6 +390,17 @@ fun ProfileScreen(navController: NavController) {
                     color = AttendrTextPrimary
                 )
             }
+
+            Spacer(Modifier.height(28.dp))
+            HorizontalDivider(color = AttendrDivider)
+            Spacer(Modifier.height(16.dp))
+
+            // ── Section 7: Legal ───────────────────────────────────────────
+            SectionHeader("Legal")
+            LegalMenuRow(label = "Privacy Policy", url = AttendrUrls.PRIVACY)
+            LegalMenuRow(label = "Terms of Service", url = AttendrUrls.TERMS)
+            LegalMenuRow(label = "Contact Support", url = AttendrUrls.CONTACT)
+            LegalMenuRow(label = "Delete Account", url = AttendrUrls.DELETE_ACCOUNT, destructive = true)
 
             Spacer(Modifier.height(20.dp))
             OutlinedButton(

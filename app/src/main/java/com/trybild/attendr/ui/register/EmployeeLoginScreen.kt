@@ -24,6 +24,7 @@ import com.trybild.attendr.ui.components.AttendrButton
 import com.trybild.attendr.ui.components.AttendrTextField
 import com.trybild.attendr.ui.components.ErrorToast
 import com.trybild.attendr.ui.components.LogoIcon
+import com.trybild.attendr.ui.legal.LegalFooter
 import com.trybild.attendr.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -171,6 +172,10 @@ fun EmployeeLoginScreen(navController: NavController) {
                 ) {
                     Text("Forgot Password?", color = AttendrNavy)
                 }
+
+                Spacer(Modifier.height(12.dp))
+
+                LegalFooter(modifier = Modifier.padding(bottom = 16.dp))
             }
         }
 
