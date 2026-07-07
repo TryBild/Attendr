@@ -12,6 +12,7 @@ sealed class OtpUiState {
     object Idle : OtpUiState()
     object Loading : OtpUiState()
     data class Verified(val pendingToken: String, val fullName: String) : OtpUiState()
+    object ResendLoading : OtpUiState()
     object OtpResent : OtpUiState()
     data class Error(val message: String) : OtpUiState()
 }
@@ -35,6 +36,7 @@ class OtpViewModel(app: Application) : AndroidViewModel(app) {
 
     fun resendOtp(fullName: String, mobile: String, teamId: String, purpose: String = "register") {
         viewModelScope.launch {
+            _state.value = OtpUiState.ResendLoading
             val result = repo.requestEmployeeOtp(fullName.ifBlank { null }, mobile, teamId, purpose)
             _state.value = if (result.isSuccess)
                 OtpUiState.OtpResent

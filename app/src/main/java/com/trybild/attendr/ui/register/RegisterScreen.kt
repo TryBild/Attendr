@@ -135,7 +135,8 @@ fun RegisterScreen(navController: NavController) {
                     else
                         stringResource(R.string.btn_continue),
                     onClick = { vm.requestOtp(name.trim(), phone, orgId.trim()) },
-                    enabled = isValid && state !is RegisterState.Loading
+                    enabled = isValid && state !is RegisterState.Loading,
+                    isLoading = state is RegisterState.Loading
                 )
 
                 Spacer(Modifier.height(12.dp))
