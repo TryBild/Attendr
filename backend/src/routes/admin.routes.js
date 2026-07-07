@@ -12,26 +12,25 @@ import {
 
 const router = Router();
 router.use(requireAuth(["admin"]));
-router.use(requireActiveSubscription);
 
 router.get("/dashboard",             getDashboard);
 router.get("/attendance/day",        getDayRegister);
-router.post("/attendance/manual",    manualAttendance);
+router.post("/attendance/manual",    requireActiveSubscription, manualAttendance);
 
 router.get("/employees",             getEmployees);
-router.post("/employees",            addEmployee);
-router.put("/employees/:id",         updateEmployee);
-router.delete("/employees/:id",      deactivateEmployee);
-router.post("/employees/:id/reset-device", resetDevice);
+router.post("/employees",            requireActiveSubscription, addEmployee);
+router.put("/employees/:id",         requireActiveSubscription, updateEmployee);
+router.delete("/employees/:id",      requireActiveSubscription, deactivateEmployee);
+router.post("/employees/:id/reset-device", requireActiveSubscription, resetDevice);
 
 router.get("/departments",           getDepartments);
-router.post("/departments",          addDepartment);
-router.put("/departments/:id",       updateDepartment);
-router.delete("/departments/:id",    deleteDepartment);
+router.post("/departments",          requireActiveSubscription, addDepartment);
+router.put("/departments/:id",       requireActiveSubscription, updateDepartment);
+router.delete("/departments/:id",    requireActiveSubscription, deleteDepartment);
 
 router.get("/geofences",             getGeofences);
-router.post("/geofences",            addGeofence);
-router.put("/geofences/:id",         updateGeofence);
-router.delete("/geofences/:id",      deleteGeofence);
+router.post("/geofences",            requireActiveSubscription, addGeofence);
+router.put("/geofences/:id",         requireActiveSubscription, updateGeofence);
+router.delete("/geofences/:id",      requireActiveSubscription, deleteGeofence);
 
 export default router;
