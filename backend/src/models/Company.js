@@ -8,6 +8,10 @@ const companySchema = new mongoose.Schema({
   adminName:     { type: String, trim: true },
   loginAttempts: { type: Number, default: 0 },   // admin login failures
   lockedUntil:   { type: Date, default: null },  // admin account lock
+  otp:           { type: String },               // admin forgot-password OTP (hashed)
+  otpExpiry:     { type: Date },
+  otpAttempts:   { type: Number, default: 0 },
+  otpLockedUntil:{ type: Date },
   phone:         { type: String },
   address:       { type: String },
   city:          { type: String, required: true },

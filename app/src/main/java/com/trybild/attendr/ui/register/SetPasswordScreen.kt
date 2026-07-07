@@ -47,7 +47,10 @@ fun SetPasswordScreen(
     LaunchedEffect(state) {
         when (val s = state) {
             is SetPasswordState.Success -> {
-                navController.navigate("home") {
+                val dest = if (s.isAdmin) {
+                    if (s.setupComplete) "admin_home" else "admin_setup"
+                } else "home"
+                navController.navigate(dest) {
                     popUpTo("welcome") { inclusive = true }
                 }
             }
