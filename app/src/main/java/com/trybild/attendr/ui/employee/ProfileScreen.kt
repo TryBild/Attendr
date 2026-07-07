@@ -60,14 +60,14 @@ fun ProfileScreen(outerNavController: NavController) {
         if (uri != null) {
             scope.launch {
                 uploadingPhoto = true
-                val bytes = withContext(Dispatchers.Default) { ImageUtils.compressImageFromUri(context, uri) }
-                if (bytes != null) {
+                try {
+                    val bytes = withContext(Dispatchers.Default) { ImageUtils.compressImageFromUri(context, uri) }
                     val result = repo.uploadProfilePhoto(bytes)
                     if (result.isFailure) {
                         Toast.makeText(context, result.exceptionOrNull()?.message ?: "Could not upload photo", Toast.LENGTH_SHORT).show()
                     }
-                } else {
-                    Toast.makeText(context, "Could not read selected image", Toast.LENGTH_SHORT).show()
+                } catch (e: ImageUtils.ImageReadException) {
+                    Toast.makeText(context, e.message ?: "Could not read selected image", Toast.LENGTH_SHORT).show()
                 }
                 uploadingPhoto = false
             }

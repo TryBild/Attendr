@@ -59,8 +59,12 @@ fun ProfileScreen(navController: NavController) {
     ) { uri: Uri? ->
         if (uri != null) {
             scope.launch {
-                val bytes = withContext(Dispatchers.Default) { ImageUtils.compressImageFromUri(context, uri) }
-                if (bytes != null) vm.uploadPhoto(bytes) else vm.notify("Could not read selected image")
+                try {
+                    val bytes = withContext(Dispatchers.Default) { ImageUtils.compressImageFromUri(context, uri) }
+                    vm.uploadPhoto(bytes)
+                } catch (e: ImageUtils.ImageReadException) {
+                    vm.notify(e.message ?: "Could not read selected image")
+                }
             }
         }
     }
