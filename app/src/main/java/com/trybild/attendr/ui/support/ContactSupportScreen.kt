@@ -225,7 +225,7 @@ private fun AttachmentChip(uri: Uri, context: Context, onRemove: () -> Unit) {
             Icon(Icons.Default.AttachFile, contentDescription = null, tint = AttendrNavy, modifier = Modifier.size(14.dp))
             Spacer(Modifier.width(6.dp))
             Text(
-                if (name.length > 32) name.take(32) + "â€¦" else name,
+                if (name.length > 32) name.take(32) + "…" else name,
                 style = MaterialTheme.typography.labelSmall,
                 color = AttendrNavy
             )
