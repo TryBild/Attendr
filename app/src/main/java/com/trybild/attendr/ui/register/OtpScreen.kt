@@ -271,7 +271,7 @@ private fun OtpBox(
                 Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                     inner()
                     if (value.isEmpty()) {
-                        Text("â€”", color = Color.LightGray, textAlign = TextAlign.Center, fontSize = 20.sp)
+                        Text("—", color = Color.LightGray, textAlign = TextAlign.Center, fontSize = 20.sp)
                     }
                 }
             }
