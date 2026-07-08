@@ -20,6 +20,7 @@ data class AdminProfileUiState(
     // Section 1 — account
     val adminName: String = "",
     val mobile: String = "",
+    val email: String = "",
 
     // Section 2 — company (read-only)
     val orgName: String = "",
@@ -85,6 +86,7 @@ class ProfileViewModel(app: Application) : AndroidViewModel(app) {
                         loading = false,
                         adminName = p.adminName ?: "",
                         mobile = p.phone ?: "",
+                        email = p.adminEmail ?: "",
                         orgName = p.orgName ?: cachedOrgName,
                         orgId = p.orgId ?: cachedOrgId,
                         photoUrl = p.photoUrl,

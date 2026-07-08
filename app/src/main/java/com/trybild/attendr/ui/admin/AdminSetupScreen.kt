@@ -36,11 +36,9 @@ fun AdminSetupScreen(navController: NavController) {
     var selectedDays by remember { mutableStateOf(setOf("Mon", "Tue", "Wed", "Thu", "Fri")) }
     var workStartTime by remember { mutableStateOf("09:00") }
     var workEndTime by remember { mutableStateOf("18:00") }
-    var timezone by remember { mutableStateOf("Asia/Kolkata") }
     var referralSource by remember { mutableStateOf("") }
 
     var industryExpanded by remember { mutableStateOf(false) }
-    var timezoneExpanded by remember { mutableStateOf(false) }
     var referralExpanded by remember { mutableStateOf(false) }
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
@@ -53,12 +51,6 @@ fun AdminSetupScreen(navController: NavController) {
 
     val industries = listOf("IT / Software", "Manufacturing", "Retail", "Logistics", "Other")
     val allDays = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
-    val timezones = listOf(
-        "Asia/Kolkata" to "India Standard Time (IST)",
-        "Asia/Dubai" to "Gulf Standard Time (GST)",
-        "Asia/Singapore" to "Singapore Time (SGT)",
-        "Europe/London" to "Greenwich Mean Time (GMT)",
-    )
     val referralOptions = listOf("Google Search", "Friend / Colleague", "Social Media", "Other")
 
     LaunchedEffect(state) {
@@ -261,33 +253,7 @@ fun AdminSetupScreen(navController: NavController) {
 
             Spacer(Modifier.height(20.dp))
 
-            // 5. Timezone
-            FieldLabel("Timezone")
-            Spacer(Modifier.height(6.dp))
-            val timezoneLabel = timezones.find { it.first == timezone }?.second ?: timezone
-            SetupDropdown(
-                value = timezoneLabel,
-                options = timezones.map { it.second },
-                placeholder = "Select timezone",
-                expanded = timezoneExpanded,
-                onExpandedChange = { if (!isLoading) timezoneExpanded = it },
-                onSelect = { label ->
-                    timezone = timezones.find { it.second == label }?.first ?: label
-                    timezoneExpanded = false
-                },
-                errorText = "",
-                enabled = !isLoading
-            )
-            Text(
-                "Most Indian businesses use IST — change only if your team works from another region.",
-                style = MaterialTheme.typography.labelSmall,
-                color = AttendrTextSecondary,
-                modifier = Modifier.padding(start = 4.dp, top = 4.dp)
-            )
-
-            Spacer(Modifier.height(20.dp))
-
-            // 6. Referral Source
+            // 5. Referral Source
             FieldLabel("How did you hear about us?")
             Spacer(Modifier.height(6.dp))
             SetupDropdown(
@@ -313,7 +279,8 @@ fun AdminSetupScreen(navController: NavController) {
                             workDays = selectedDays.toList(),
                             workStartTime = workStartTime,
                             workEndTime = workEndTime,
-                            timezone = timezone,
+                            // India-only product — IST is the only supported timezone (no user-facing picker)
+                            timezone = "Asia/Kolkata",
                             referralSource = referralSource
                         )
                     }

@@ -707,7 +707,7 @@ export async function adminSetup(req, res) {
 export async function adminProfile(req, res) {
   try {
     const company = await Company.findById(req.auth.companyId)
-      .select("name teamId adminName phone setupComplete workDays workStartTime workEndTime photoUrl");
+      .select("name teamId adminName adminEmail phone setupComplete workDays workStartTime workEndTime photoUrl");
     if (!company) return err(res, "Company not found", 404);
 
     return res.json({
@@ -716,6 +716,7 @@ export async function adminProfile(req, res) {
       orgId:         company.teamId,
       orgName:       company.name,
       adminName:     company.adminName,
+      adminEmail:    company.adminEmail,
       phone:         company.phone,
       workDays:      company.workDays ?? [],
       workStartTime: company.workStartTime,

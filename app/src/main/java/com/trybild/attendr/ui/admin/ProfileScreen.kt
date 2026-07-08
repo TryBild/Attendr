@@ -236,9 +236,16 @@ fun ProfileScreen(navController: NavController) {
 
             Spacer(Modifier.height(12.dp))
             ReadOnlyField(
+                label = "Email",
+                value = state.email.ifBlank { "Not set" },
+                helper = "Your sign-in email — contact support to change it."
+            )
+
+            Spacer(Modifier.height(12.dp))
+            ReadOnlyField(
                 label = "Mobile number",
                 value = state.mobile.ifBlank { "Not set" },
-                helper = "Used for account contact — sign-in is via your admin email."
+                helper = "Used for account contact."
             )
 
             Spacer(Modifier.height(16.dp))
