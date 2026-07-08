@@ -25,6 +25,7 @@ data class AdminSetupResponse(val ok: Boolean, val success: Boolean?, val error:
 data class AdminProfileResponse(
     val ok: Boolean, val setupComplete: Boolean,
     val orgId: String?, val orgName: String?, val adminName: String?,
+    val adminEmail: String? = null,
     val phone: String?,
     val workDays: List<String>?, val workStartTime: String?, val workEndTime: String?,
     val photoUrl: String? = null,
