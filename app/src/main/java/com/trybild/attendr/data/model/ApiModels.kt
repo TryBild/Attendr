@@ -4,7 +4,7 @@ data class AdminLoginRequest(val email: String, val password: String)
 data class AdminCompany(
     val id: String, val name: String, val teamId: String,
     val plan: String, val city: String?, val state: String?,
-    val setupComplete: Boolean = false
+    val setupComplete: Boolean = false, val photoUrl: String? = null
 )
 data class AdminLoginResponse(val ok: Boolean, val token: String?, val company: AdminCompany?, val error: String?)
 
@@ -25,8 +25,10 @@ data class AdminSetupResponse(val ok: Boolean, val success: Boolean?, val error:
 data class AdminProfileResponse(
     val ok: Boolean, val setupComplete: Boolean,
     val orgId: String?, val orgName: String?, val adminName: String?,
+    val adminEmail: String? = null,
     val phone: String?,
     val workDays: List<String>?, val workStartTime: String?, val workEndTime: String?,
+    val photoUrl: String? = null,
     val error: String?
 )
 
@@ -39,6 +41,7 @@ data class OtpResponse(val ok: Boolean, val message: String?)
 data class OtpVerifyResponse(val ok: Boolean, val pendingToken: String?, val fullName: String?, val error: String?)
 
 // Backend: POST /auth/employee/set-password → { ok, token, employee } (same shape as AuthResponse)
+// Also reused for admin forgot-password reset, where the response has `company` instead of `employee`.
 data class SetPasswordRequest(
     val pendingToken: String, val password: String,
     val confirmPassword: String, val deviceId: String? = null
@@ -56,15 +59,24 @@ data class EmployeeProfile(
     val designation: String?,
     val department: String?,
     val joinedAt: String?,
+    val photoUrl: String? = null,
     val company: EmployeeCompany?
 )
-data class AuthResponse(val ok: Boolean, val token: String?, val employee: EmployeeProfile?, val error: String?)
+data class AuthResponse(
+    val ok: Boolean, val token: String?,
+    val employee: EmployeeProfile?, val company: AdminCompany? = null,
+    val error: String?
+)
+
+// Backend: POST /auth/profile/photo (multipart, field name "photo") → { ok, photoUrl }
+data class PhotoUploadResponse(val ok: Boolean, val photoUrl: String?, val error: String?)
 // Body must match backend: const { latitude, longitude, action } = req.body
 // action values must be "checkin" or "checkout" (not "in"/"out")
 data class MarkAttendanceBody(val action: String, val latitude: Double?, val longitude: Double?, val mockDetected: Boolean = false, val deviceId: String? = null)
 
 // Backend success: { ok, action, time, status, geofence, distance }
-data class AttendanceResponse(val ok: Boolean, val action: String?, val time: String?, val error: String?)
+// Backend error may include a machine-readable `code` (e.g. "GEOFENCE_NOT_SET") + `message`.
+data class AttendanceResponse(val ok: Boolean, val action: String?, val time: String?, val error: String?, val code: String? = null, val message: String? = null)
 
 // Backend GET /attendance/today: single record { ok, status, checkInTime, checkOutTime, ... }
 data class TodayAttendanceResponse(

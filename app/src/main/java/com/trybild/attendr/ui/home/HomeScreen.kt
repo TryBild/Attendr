@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -46,6 +47,7 @@ fun HomeScreen(
     val employeeName by vm.employeeName.collectAsState()
     val badge by vm.badge.collectAsState()
     val isMockDetected by vm.mockDetected.collectAsState()
+    val notifyingAdmin by vm.notifyingAdmin.collectAsState()
     val context = LocalContext.current
     var errorMsg by remember { mutableStateOf("") }
     var successMsg by remember { mutableStateOf("") }
@@ -108,8 +110,14 @@ fun HomeScreen(
             is HomeState.CheckedIn  -> { successMsg = "Checked in ✅"; errorMsg = ""; vm.resetState() }
             is HomeState.CheckedOut -> { successMsg = "Checked out 🔴"; errorMsg = ""; vm.resetState() }
             is HomeState.Error -> { errorMsg = s.message; vm.resetState() }
+            // Keep GeofenceNotSet in state so the "Notify admin" card stays visible; just clear banners.
+            is HomeState.GeofenceNotSet -> { errorMsg = ""; successMsg = "" }
             else -> {}
         }
+    }
+
+    LaunchedEffect(Unit) {
+        vm.notifyResult.collect { msg -> Toast.makeText(context, msg, Toast.LENGTH_LONG).show() }
     }
 
     AttendrBackground(modifier = Modifier.fillMaxSize()) {
@@ -178,6 +186,25 @@ fun HomeScreen(
                     enabled = state !is HomeState.Loading,
                     containerColor = AttendrError
                 )
+            }
+        }
+
+        (state as? HomeState.GeofenceNotSet)?.let { gns ->
+            Spacer(Modifier.height(12.dp))
+            AttendrCard(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        gns.message,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    AttendrButton(
+                        text = if (notifyingAdmin) "Notifying…" else "Notify Admin",
+                        onClick = { vm.notifyAdminGeofence() },
+                        enabled = !notifyingAdmin
+                    )
+                }
             }
         }
 

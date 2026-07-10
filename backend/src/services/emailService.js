@@ -75,6 +75,21 @@ export async function sendPasswordChangedEmail(email, { account, ip, time }) {
   );
 }
 
+// Nudge an org admin/HR that an employee tried to mark attendance but no office
+// location (geofence) is configured yet. Triggered by the employee "Notify admin" action.
+export async function sendGeofenceNotSetEmail(adminEmail, employeeName, orgName) {
+  await sendSecurityEmail(
+    adminEmail,
+    "Action needed: set your office location on Attendr",
+    `
+    <h2>Set up your office location</h2>
+    <p><b>${employeeName || "An employee"}</b> tried to mark attendance${orgName ? ` for <b>${orgName}</b>` : ""}, but no office location has been set up yet.</p>
+    <p>Employees can't check in or out until an admin adds an office location (geofence) in the Attendr admin app.</p>
+    <p><b>What to do:</b> open Attendr → Admin → Office Locations, and add your office so your team can start marking attendance.</p>
+    `
+  );
+}
+
 export async function sendSupportTicketEmail(ticket) {
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     console.log("[DEV] Support ticket (no SMTP configured):", ticket.ticketId);

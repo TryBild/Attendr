@@ -56,6 +56,95 @@ function todayIST() {
   return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
 }
 
+// Admins have no Employee doc — their own contact number lives on Company.phone,
+// which isn't format-constrained the way Employee.mobile is. Compare by last 10
+// digits so a stored "+91 96534 86641" still matches a bare "9653486641" lookup.
+function normalizePhone(v) {
+  return String(v || "").replace(/\D/g, "").slice(-10);
+}
+
+// Mirrors the employee OTP-send block below, but stores state on the Company
+// doc (admins have no Employee record to hang OTP fields off of).
+async function sendAdminForgotOTP(company, mobile, res) {
+  if (company.otpLockedUntil && company.otpLockedUntil > new Date()) {
+    const remainingMs = company.otpLockedUntil - new Date();
+    const mins = Math.ceil(remainingMs / 60000);
+    return err(res, `Too many attempts. Try again in ${mins} minute(s).`, 429);
+  }
+
+  const otp = generateOTP();
+  const hashed = await bcrypt.hash(otp, 10);
+  const expiryMins = Number(process.env.OTP_EXPIRY_MINUTES) || 10;
+
+  company.otp = hashed;
+  company.otpExpiry = new Date(Date.now() + expiryMins * 60 * 1000);
+  company.otpAttempts = (company.otpAttempts || 0) + 1;
+
+  if (company.otpAttempts > 5) {
+    company.otpLockedUntil = new Date(Date.now() + 30 * 60 * 1000);
+    await company.save();
+    return err(res, "Too many OTP requests. Account locked for 30 minutes.", 429);
+  }
+
+  await company.save();
+  await sendOTP(mobile, otp);
+
+  return res.json({
+    ok: true,
+    message: `OTP sent to ${maskMobile(mobile)}`,
+    expiresInMinutes: expiryMins,
+  });
+}
+
+// Mirrors the employee OTP-verify block below, operating on Company's own
+// otp fields. Issues a pendingToken tagged role:"admin" so employeeSetPassword
+// knows to update Company.adminPassword instead of Employee.passwordHash.
+async function verifyAdminForgotOTP(company, otp, req, res) {
+  if (!company.otp || !company.otpExpiry)
+    return err(res, "No OTP requested. Please request a new OTP.", 400);
+  if (company.otpExpiry < new Date())
+    return err(res, "OTP has expired. Please request a new one.", 400);
+
+  const valid = await bcrypt.compare(String(otp), company.otp);
+  if (!valid) {
+    company.otpAttempts = (company.otpAttempts || 0) + 1;
+    if (company.otpAttempts >= 3) {
+      company.otpLockedUntil = new Date(Date.now() + 15 * 60 * 1000);
+      logSecurity({
+        companyId: company._id,
+        userId:    company._id,
+        userKind:  "admin",
+        event:     "otp_brute_force",
+        ip:        req.ip,
+        userAgent: req.headers["user-agent"],
+      });
+    }
+    await company.save();
+    const remaining = Math.max(0, 3 - company.otpAttempts);
+    return err(res, `Invalid OTP. ${remaining} attempt(s) remaining.`, 401);
+  }
+
+  company.otp = undefined;
+  company.otpExpiry = undefined;
+  company.otpAttempts = 0;
+  company.otpLockedUntil = undefined;
+  await company.save();
+
+  const pendingToken = signToken({
+    id:        company._id,
+    companyId: company._id,
+    teamId:    company.teamId,
+    kind:      "pending",
+    role:      "admin",
+  }, "15m");
+
+  return res.json({
+    ok: true,
+    pendingToken,
+    fullName: company.adminName || company.name,
+  });
+}
+
 // POST /api/auth/otp/request
 export async function requestOTP(req, res) {
   try {
@@ -83,8 +172,12 @@ export async function requestOTP(req, res) {
         employee.fullName = fullName.trim();
       }
     } else {
-      if (purpose === "forgot")
+      if (purpose === "forgot") {
+        if (company.phone && normalizePhone(company.phone) === normalizePhone(mobile)) {
+          return sendAdminForgotOTP(company, mobile, res);
+        }
         return err(res, "No account found. Please register first.", 404);
+      }
       employee = new Employee({
         company: company._id,
         fullName: fullName.trim(),
@@ -147,7 +240,12 @@ export async function verifyOTP(req, res) {
 
     const employee = await Employee.findOne({ mobile, company: company._id });
 
-    if (!employee) return err(res, "Employee not found.", 404);
+    if (!employee) {
+      if (company.phone && normalizePhone(company.phone) === normalizePhone(mobile)) {
+        return verifyAdminForgotOTP(company, otp, req, res);
+      }
+      return err(res, "Employee not found.", 404);
+    }
     if (!employee.otp || !employee.otpExpiry)
       return err(res, "No OTP requested. Please request a new OTP.", 400);
     if (employee.otpExpiry < new Date())
@@ -215,6 +313,55 @@ export async function employeeSetPassword(req, res) {
     }
     if (payload.kind !== "pending")
       return err(res, "Invalid token", 401);
+
+    if (payload.role === "admin") {
+      if (password.length < 8)
+        return err(res, "Password must be at least 8 characters", 400);
+
+      const company = await Company.findById(payload.id);
+      if (!company) return err(res, "Account not found.", 404);
+
+      company.adminPassword = await bcrypt.hash(password, 12);
+      company.loginAttempts = 0;
+      company.lockedUntil = null;
+      await company.save();
+
+      logSecurity({
+        companyId: company._id,
+        userId:    company._id,
+        userKind:  "admin",
+        event:     "password_changed",
+        ip:        req.ip,
+        userAgent: req.headers["user-agent"],
+      });
+      fireAndForget(sendPasswordChangedEmail(company.adminEmail, {
+        account: `admin (${company.adminEmail})`,
+        ip:      req.ip,
+        time:    new Date().toISOString(),
+      }));
+
+      const token = signToken({
+        id:        company._id,
+        companyId: company._id,
+        teamId:    company.teamId,
+        kind:      "admin",
+      });
+
+      return res.json({
+        ok: true,
+        token,
+        company: {
+          id:            company._id,
+          name:          company.name,
+          teamId:        company.teamId,
+          plan:          company.plan,
+          city:          company.city,
+          state:         company.state,
+          setupComplete: company.setupComplete ?? false,
+          photoUrl:      company.photoUrl || null,
+        },
+      });
+    }
 
     const employee = await Employee.findById(payload.id)
       .populate("company", "name teamId")
@@ -356,6 +503,7 @@ function buildEmployeeResponse(employee) {
     designation:  employee.designation,
     department:   employee.department?.name || null,
     joinedAt:     employee.joinedAt,
+    photoUrl:     employee.photoUrl || null,
     company: {
       name:   employee.company.name,
       teamId: employee.company.teamId,
@@ -428,6 +576,7 @@ export async function adminLogin(req, res) {
         city:         company.city,
         state:        company.state,
         setupComplete: company.setupComplete ?? false,
+        photoUrl:     company.photoUrl || null,
       },
     });
   } catch (e) {
@@ -558,7 +707,7 @@ export async function adminSetup(req, res) {
 export async function adminProfile(req, res) {
   try {
     const company = await Company.findById(req.auth.companyId)
-      .select("name teamId adminName phone setupComplete workDays workStartTime workEndTime");
+      .select("name teamId adminName adminEmail phone setupComplete workDays workStartTime workEndTime photoUrl");
     if (!company) return err(res, "Company not found", 404);
 
     return res.json({
@@ -567,10 +716,12 @@ export async function adminProfile(req, res) {
       orgId:         company.teamId,
       orgName:       company.name,
       adminName:     company.adminName,
+      adminEmail:    company.adminEmail,
       phone:         company.phone,
       workDays:      company.workDays ?? [],
       workStartTime: company.workStartTime,
       workEndTime:   company.workEndTime,
+      photoUrl:      company.photoUrl || null,
     });
   } catch (e) {
     console.error(e);

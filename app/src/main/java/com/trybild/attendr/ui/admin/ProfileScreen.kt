@@ -1,5 +1,8 @@
 package com.trybild.attendr.ui.admin
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -21,18 +24,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import com.trybild.attendr.ui.components.AttendrBackground
 import com.trybild.attendr.ui.components.AttendrButton
 import com.trybild.attendr.ui.components.AttendrTextField
 import com.trybild.attendr.ui.legal.AttendrUrls
 import com.trybild.attendr.ui.legal.LegalMenuRow
 import com.trybild.attendr.ui.theme.*
+import com.trybild.attendr.utils.ImageUtils
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -42,6 +51,23 @@ fun ProfileScreen(navController: NavController) {
 
     val snackbarHostState = remember { SnackbarHostState() }
     val clipboardManager = LocalClipboardManager.current
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            scope.launch {
+                try {
+                    val bytes = withContext(Dispatchers.Default) { ImageUtils.compressImageFromUri(context, uri) }
+                    vm.uploadPhoto(bytes)
+                } catch (e: ImageUtils.ImageReadException) {
+                    vm.notify(e.message ?: "Could not read selected image")
+                }
+            }
+        }
+    }
 
     var showLogoutDialog by remember { mutableStateOf(false) }
     var showStartTimePicker by remember { mutableStateOf(false) }
@@ -144,11 +170,15 @@ fun ProfileScreen(navController: NavController) {
                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                 contentAlignment = Alignment.Center
             ) {
-                // No photo-upload pipeline exists in the backend yet, so tapping
-                // the avatar / camera badge just flags that the feature isn't wired.
                 Box(
                     contentAlignment = Alignment.BottomEnd,
-                    modifier = Modifier.clickable { vm.notify("Photo upload isn't available yet") }
+                    modifier = Modifier.clickable(enabled = !state.uploadingPhoto) {
+                        photoPickerLauncher.launch(
+                            androidx.activity.result.PickVisualMediaRequest(
+                                ActivityResultContracts.PickVisualMedia.ImageOnly
+                            )
+                        )
+                    }
                 ) {
                     Box(
                         modifier = Modifier
@@ -157,11 +187,27 @@ fun ProfileScreen(navController: NavController) {
                             .background(AttendrNavy),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            nameInitials(state.adminName).ifEmpty { "A" },
-                            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                            color = Color.White
-                        )
+                        if (state.photoUrl != null) {
+                            AsyncImage(
+                                model = state.photoUrl,
+                                contentDescription = "Profile photo",
+                                modifier = Modifier.fillMaxSize().clip(CircleShape)
+                            )
+                        } else {
+                            Text(
+                                nameInitials(state.adminName).ifEmpty { "A" },
+                                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                                color = Color.White
+                            )
+                        }
+                        if (state.uploadingPhoto) {
+                            Box(
+                                modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.4f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(28.dp))
+                            }
+                        }
                     }
                     Box(
                         modifier = Modifier
@@ -190,9 +236,16 @@ fun ProfileScreen(navController: NavController) {
 
             Spacer(Modifier.height(12.dp))
             ReadOnlyField(
+                label = "Email",
+                value = state.email.ifBlank { "Not set" },
+                helper = "Your sign-in email — contact support to change it."
+            )
+
+            Spacer(Modifier.height(12.dp))
+            ReadOnlyField(
                 label = "Mobile number",
                 value = state.mobile.ifBlank { "Not set" },
-                helper = "Used for account contact — sign-in is via your admin email."
+                helper = "Used for account contact."
             )
 
             Spacer(Modifier.height(16.dp))

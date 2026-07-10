@@ -1,6 +1,7 @@
-import { Attendance, Employee, Geofence } from "../models/index.js";
+import { Attendance, Employee, Geofence, Company } from "../models/index.js";
 import { findMatchingGeofence, haversineDistance } from "../utils/geo.js";
 import { err } from "../utils/response.js";
+import { sendGeofenceNotSetEmail } from "../services/emailService.js";
 
 function todayIST() {
   return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
@@ -33,6 +34,19 @@ export async function markAttendance(req, res) {
     }
 
     const geofences = await Geofence.find({ company: req.auth.companyId, isActive: true });
+
+    // No office location configured yet — this is an admin setup gap, not an employee problem.
+    // Return a machine-readable code so the app can offer to notify the admin instead of
+    // showing a misleading "not within office premises" message.
+    if (geofences.length === 0) {
+      return res.status(409).json({
+        ok: false,
+        code: "GEOFENCE_NOT_SET",
+        error: "Your admin hasn't set up an office location yet.",
+        message: "Your admin hasn't set up an office location yet.",
+      });
+    }
+
     const match = findMatchingGeofence(latitude, longitude, geofences);
 
     if (!match) {
@@ -99,6 +113,51 @@ export async function markAttendance(req, res) {
   } catch (e) {
     console.error(e);
     err(res, e.message);
+  }
+}
+
+// Throttle geofence-not-set nudges: at most one email per org per window, so a whole team
+// hitting check-in on an unconfigured org can't spam the admin. In-memory is sufficient here
+// (a missed throttle across a restart just allows one extra email).
+const geofenceNotifyThrottle = new Map(); // companyId -> last-sent epoch ms
+const GEOFENCE_NOTIFY_WINDOW_MS = 3 * 60 * 60 * 1000; // 3 hours
+
+// POST /api/attendance/notify-admin-geofence
+export async function notifyAdminGeofence(req, res) {
+  try {
+    const companyId = String(req.auth.companyId);
+    const now = Date.now();
+
+    const last = geofenceNotifyThrottle.get(companyId);
+    if (last && now - last < GEOFENCE_NOTIFY_WINDOW_MS) {
+      return res.json({
+        ok: true,
+        notified: false,
+        message: "Your admin has already been notified recently. Please check back soon.",
+      });
+    }
+
+    const [company, employee] = await Promise.all([
+      Company.findById(req.auth.companyId).select("name adminEmail"),
+      Employee.findById(req.auth.id).select("fullName"),
+    ]);
+
+    if (!company?.adminEmail) {
+      return err(res, "Could not reach your admin. Please contact support.", 404);
+    }
+
+    await sendGeofenceNotSetEmail(company.adminEmail, employee?.fullName || "An employee", company.name);
+    // Only record the throttle after a successful send so a transient failure can be retried.
+    geofenceNotifyThrottle.set(companyId, now);
+
+    return res.json({
+      ok: true,
+      notified: true,
+      message: "Your admin has been notified to set up the office location.",
+    });
+  } catch (e) {
+    console.error("[notifyAdminGeofence]", e);
+    return err(res, "Could not notify your admin right now. Please try again later.");
   }
 }
 

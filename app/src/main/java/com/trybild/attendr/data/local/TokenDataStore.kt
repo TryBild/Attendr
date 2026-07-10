@@ -21,6 +21,7 @@ class TokenDataStore(private val context: Context) {
     private val ORG_ID = stringPreferencesKey(Constants.ORG_ID_KEY)
     private val EMPLOYEE_NAME = stringPreferencesKey("employee_name")
     private val EMPLOYEE_JOINED_AT = stringPreferencesKey("employee_joined_at")
+    private val PHOTO_URL = stringPreferencesKey(Constants.PHOTO_URL_KEY)
 
     val token: Flow<String?> = context.dataStore.data.map { it[TOKEN] }
     val deviceId: Flow<String?> = context.dataStore.data.map { it[DEVICE_ID] }
@@ -30,6 +31,7 @@ class TokenDataStore(private val context: Context) {
     val orgId: Flow<String?> = context.dataStore.data.map { it[ORG_ID] }
     val employeeName: Flow<String?> = context.dataStore.data.map { it[EMPLOYEE_NAME] }
     val employeeJoinedAt: Flow<String?> = context.dataStore.data.map { it[EMPLOYEE_JOINED_AT] }
+    val photoUrl: Flow<String?> = context.dataStore.data.map { it[PHOTO_URL] }
 
     suspend fun saveToken(token: String) { context.dataStore.edit { it[TOKEN] = token } }
     suspend fun saveDeviceId(id: String) { context.dataStore.edit { it[DEVICE_ID] = id } }
@@ -39,6 +41,7 @@ class TokenDataStore(private val context: Context) {
     suspend fun saveOrgId(id: String) { context.dataStore.edit { it[ORG_ID] = id } }
     suspend fun saveEmployeeName(name: String) { context.dataStore.edit { it[EMPLOYEE_NAME] = name } }
     suspend fun saveEmployeeJoinedAt(joinedAt: String) { context.dataStore.edit { it[EMPLOYEE_JOINED_AT] = joinedAt } }
+    suspend fun savePhotoUrl(url: String) { context.dataStore.edit { it[PHOTO_URL] = url } }
     suspend fun clearToken() {
         context.dataStore.edit {
             it.remove(TOKEN)
@@ -48,6 +51,7 @@ class TokenDataStore(private val context: Context) {
             it.remove(ORG_ID)
             it.remove(EMPLOYEE_NAME)
             it.remove(EMPLOYEE_JOINED_AT)
+            it.remove(PHOTO_URL)
         }
     }
 }

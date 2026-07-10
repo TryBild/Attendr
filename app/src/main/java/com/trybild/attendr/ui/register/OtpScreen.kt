@@ -32,6 +32,11 @@ import com.trybild.attendr.ui.components.ErrorToast
 import com.trybild.attendr.ui.theme.*
 import kotlinx.coroutines.delay
 
+// Matches backend's otpRateLimiter (backend/src/middleware/rateLimiter.js):
+// 5 requests per 10-minute window per mobile number, i.e. one every 120s
+// keeps a user well clear of the 429 even if they resend every time it unlocks.
+private const val RESEND_COOLDOWN_SECONDS = 120
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OtpScreen(
@@ -47,11 +52,15 @@ fun OtpScreen(
     var otpDigits by remember { mutableStateOf(List(6) { "" }) }
     var showError by remember { mutableStateOf(false) }
     var errorMsg by remember { mutableStateOf("") }
-    var resendSeconds by remember { mutableStateOf(30) }
+    var showSuccess by remember { mutableStateOf(false) }
+    var successMsg by remember { mutableStateOf("") }
+    var resendSeconds by remember { mutableStateOf(RESEND_COOLDOWN_SECONDS) }
     val focusRequesters = remember { List(6) { FocusRequester() } }
 
     LaunchedEffect(Unit) {
         focusRequesters[0].requestFocus()
+        successMsg = "OTP sent to +91 $phone"
+        showSuccess = true
         while (resendSeconds > 0) {
             delay(1000L)
             resendSeconds--
@@ -67,12 +76,16 @@ fun OtpScreen(
                 vm.resetState()
             }
             is OtpUiState.OtpResent -> {
-                resendSeconds = 30
+                resendSeconds = RESEND_COOLDOWN_SECONDS
+                successMsg = "OTP resent to +91 $phone"
+                showSuccess = true
+                showError = false
                 vm.resetState()
             }
             is OtpUiState.Error -> {
                 errorMsg = s.message
                 showError = true
+                showSuccess = false
                 vm.resetState()
             }
             else -> {}
@@ -172,6 +185,12 @@ fun OtpScreen(
                             style = MaterialTheme.typography.bodyMedium,
                             color = AttendrTextSecondary
                         )
+                    } else if (state is OtpUiState.ResendLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            color = AttendrNavy,
+                            strokeWidth = 2.dp
+                        )
                     } else {
                         TextButton(onClick = { vm.resendOtp(name, phone, orgId, purpose) }) {
                             Text("Resend", color = AttendrNavy)
@@ -190,6 +209,16 @@ fun OtpScreen(
                 Spacer(Modifier.height(24.dp))
             }
         }
+
+        ErrorToast(
+            message = successMsg,
+            visible = showSuccess,
+            onDismiss = { showSuccess = false },
+            isSuccess = true,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 72.dp, start = 16.dp, end = 16.dp)
+        )
 
         ErrorToast(
             message = errorMsg,
@@ -242,7 +271,7 @@ private fun OtpBox(
                 Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                     inner()
                     if (value.isEmpty()) {
-                        Text("â€”", color = Color.LightGray, textAlign = TextAlign.Center, fontSize = 20.sp)
+                        Text("—", color = Color.LightGray, textAlign = TextAlign.Center, fontSize = 20.sp)
                     }
                 }
             }

@@ -19,6 +19,7 @@ const employeeSchema = new mongoose.Schema({
   loginAttempts: { type: Number, default: 0 },
   lockedUntil:   { type: Date, default: null },
   deviceId:      { type: String, default: null, index: true },
+  photoUrl:      { type: String, default: null },
 }, { timestamps: true });
 
 employeeSchema.index({ mobile: 1, company: 1 }, { unique: true });

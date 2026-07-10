@@ -20,10 +20,14 @@ data class AdminProfileUiState(
     // Section 1 — account
     val adminName: String = "",
     val mobile: String = "",
+    val email: String = "",
 
     // Section 2 — company (read-only)
     val orgName: String = "",
     val orgId: String = "",
+
+    val photoUrl: String? = null,
+    val uploadingPhoto: Boolean = false,
 
     // Section 3 — company settings
     val workDays: Set<String> = emptySet(),
@@ -82,8 +86,10 @@ class ProfileViewModel(app: Application) : AndroidViewModel(app) {
                         loading = false,
                         adminName = p.adminName ?: "",
                         mobile = p.phone ?: "",
+                        email = p.adminEmail ?: "",
                         orgName = p.orgName ?: cachedOrgName,
                         orgId = p.orgId ?: cachedOrgId,
+                        photoUrl = p.photoUrl,
                         workDays = days,
                         workStartTime = start,
                         workEndTime = end,
@@ -163,6 +169,18 @@ class ProfileViewModel(app: Application) : AndroidViewModel(app) {
                 _state.update {
                     it.copy(saving = false, saveError = result.exceptionOrNull()?.message ?: "Could not save changes")
                 }
+            }
+        }
+    }
+
+    fun uploadPhoto(imageBytes: ByteArray) {
+        _state.update { it.copy(uploadingPhoto = true) }
+        viewModelScope.launch {
+            val result = repo.uploadProfilePhoto(imageBytes)
+            if (result.isSuccess) {
+                _state.update { it.copy(uploadingPhoto = false, photoUrl = result.getOrNull(), saveMessage = "Photo updated") }
+            } else {
+                _state.update { it.copy(uploadingPhoto = false, saveError = result.exceptionOrNull()?.message ?: "Could not upload photo") }
             }
         }
     }
