@@ -6,6 +6,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -128,9 +129,10 @@ fun ProfileScreen(outerNavController: NavController) {
         ) {
             Box(
                 modifier = Modifier
-                    .size(80.dp)
+                    .size(96.dp)
                     .clip(CircleShape)
-                    .background(AttendrNavy),
+                    .background(StitchSurfaceContainer)
+                    .border(1.5.dp, StitchOutlineVariant, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 if (photoUrl != null) {
@@ -140,11 +142,7 @@ fun ProfileScreen(outerNavController: NavController) {
                         modifier = Modifier.fillMaxSize().clip(CircleShape)
                     )
                 } else {
-                    Text(
-                        initials,
-                        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                        color = Color.White
-                    )
+                    Text(initials, style = StitchHeadlineLg, color = StitchPrimary)
                 }
                 if (uploadingPhoto) {
                     Box(
@@ -157,16 +155,17 @@ fun ProfileScreen(outerNavController: NavController) {
             }
             Box(
                 modifier = Modifier
-                    .size(26.dp)
+                    .size(32.dp)
                     .clip(CircleShape)
-                    .background(AttendrSurface),
+                    .background(StitchPrimary)
+                    .border(2.dp, Color.White, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     Icons.Default.PhotoCamera,
                     contentDescription = "Change photo",
-                    tint = AttendrNavy,
-                    modifier = Modifier.size(14.dp)
+                    tint = Color.White,
+                    modifier = Modifier.size(18.dp)
                 )
             }
         }
@@ -175,15 +174,15 @@ fun ProfileScreen(outerNavController: NavController) {
 
         Text(
             employeeName ?: "Employee",
-            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-            color = AttendrTextPrimary
+            style = StitchHeadlineLgMobile,
+            color = StitchOnSurface
         )
         if (!companyName.isNullOrBlank()) {
             Spacer(Modifier.height(4.dp))
             Text(
                 companyName!!,
-                style = MaterialTheme.typography.bodyMedium,
-                color = AttendrTextSecondary
+                style = StitchBodyMd,
+                color = StitchOnSurfaceVariant
             )
         }
 

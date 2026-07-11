@@ -5,6 +5,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -195,9 +196,10 @@ fun ProfileScreen(navController: NavController) {
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(88.dp)
+                            .size(96.dp)
                             .clip(CircleShape)
-                            .background(AttendrNavy),
+                            .background(StitchSurfaceContainer)
+                            .border(1.5.dp, StitchOutlineVariant, CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         if (state.photoUrl != null) {
@@ -209,8 +211,8 @@ fun ProfileScreen(navController: NavController) {
                         } else {
                             Text(
                                 nameInitials(state.adminName).ifEmpty { "A" },
-                                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                                color = Color.White
+                                style = StitchHeadlineLg,
+                                color = StitchPrimary
                             )
                         }
                         if (state.uploadingPhoto) {
@@ -224,16 +226,17 @@ fun ProfileScreen(navController: NavController) {
                     }
                     Box(
                         modifier = Modifier
-                            .size(28.dp)
+                            .size(32.dp)
                             .clip(CircleShape)
-                            .background(AttendrSurface),
+                            .background(StitchPrimary)
+                            .border(2.dp, Color.White, CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             Icons.Default.PhotoCamera,
                             contentDescription = "Change photo",
-                            tint = AttendrNavy,
-                            modifier = Modifier.size(16.dp)
+                            tint = Color.White,
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 }
