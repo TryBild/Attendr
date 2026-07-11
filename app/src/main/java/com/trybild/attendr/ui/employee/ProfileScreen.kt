@@ -18,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -77,9 +78,36 @@ fun ProfileScreen(outerNavController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .background(IndustrialPageBackground)
     ) {
+        // Employee Profile is a bottom-tab root (no back stack to pop, unlike
+        // the admin variant which is pushed) - title only, no back arrow.
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .background(StitchSurface)
+                .drawBehind {
+                    drawLine(
+                        color = StitchOutlineVariant,
+                        start = androidx.compose.ui.geometry.Offset(0f, size.height),
+                        end = androidx.compose.ui.geometry.Offset(size.width, size.height),
+                        strokeWidth = 1.5.dp.toPx()
+                    )
+                }
+                .padding(horizontal = 16.dp),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            Text("Settings", style = StitchHeadlineMd, color = StitchPrimary)
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .widthIn(max = 640.dp)
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
         Spacer(Modifier.height(40.dp))
 
         // Avatar initials circle
@@ -228,6 +256,7 @@ fun ProfileScreen(outerNavController: NavController) {
             border = androidx.compose.foundation.BorderStroke(1.dp, AttendrError)
         ) {
             Text("Log Out", style = MaterialTheme.typography.labelLarge)
+        }
         }
     }
 }
