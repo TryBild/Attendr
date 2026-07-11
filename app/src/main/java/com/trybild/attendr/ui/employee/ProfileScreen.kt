@@ -31,6 +31,8 @@ import com.trybild.attendr.data.local.TokenDataStore
 import com.trybild.attendr.data.model.GeofenceItem
 import com.trybild.attendr.data.repository.AuthRepository
 import com.trybild.attendr.ui.components.AttendrEmptyState
+import com.trybild.attendr.ui.components.IndustrialCard
+import com.trybild.attendr.ui.components.IndustrialSectionLabel
 import com.trybild.attendr.ui.legal.AttendrUrls
 import com.trybild.attendr.ui.legal.LegalMenuRow
 import com.trybild.attendr.ui.theme.*
@@ -186,22 +188,16 @@ fun ProfileScreen(outerNavController: NavController) {
             )
         }
 
-        Spacer(Modifier.height(40.dp))
+        Spacer(Modifier.height(32.dp))
 
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = AttendrSurface),
-            elevation = CardDefaults.cardElevation(2.dp)
-        ) {
-            Column(modifier = Modifier.padding(4.dp)) {
-                ProfileRow(label = "Name", value = employeeName ?: "—")
-                HorizontalDivider(color = AttendrDivider, thickness = 0.5.dp)
-                ProfileRow(label = "Organisation", value = companyName ?: "—")
-            }
+        IndustrialSectionLabel("Personal Information", modifier = Modifier.align(Alignment.Start))
+        IndustrialCard {
+            ProfileRow(label = "Name", value = employeeName ?: "—")
+            HorizontalDivider(color = StitchOutlineVariant, thickness = 1.dp)
+            ProfileRow(label = "Organisation", value = companyName ?: "—")
         }
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(24.dp))
 
         // Assigned geofences
         Text("Office Locations", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold), color = AttendrTextPrimary)
@@ -262,18 +258,12 @@ fun ProfileScreen(outerNavController: NavController) {
 
 @Composable
 private fun ProfileRow(label: String, value: String) {
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+            .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
-        Text(label, style = MaterialTheme.typography.bodyMedium, color = AttendrTextSecondary)
-        Text(
-            value,
-            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-            color = AttendrTextPrimary
-        )
+        Text(label.uppercase(), style = StitchLabelSm, color = StitchOutline)
+        Text(value, style = StitchBodyLg, color = StitchOnSurface)
     }
 }
