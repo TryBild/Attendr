@@ -17,9 +17,15 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.Fingerprint
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material.icons.outlined.Fingerprint
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
@@ -159,6 +166,14 @@ fun ProfileScreen(navController: NavController) {
                 }
                 Text("Settings", style = StitchHeadlineMd, color = StitchPrimary)
             }
+        },
+        bottomBar = {
+            AdminBottomNavBar(
+                currentRoute = "admin_profile",
+                onNavigate = { route ->
+                    navController.navigate(route) { popUpTo("admin_home") { saveState = true } }
+                }
+            )
         }
     ) { padding ->
         if (state.loading) {
@@ -461,6 +476,50 @@ fun ProfileScreen(navController: NavController) {
             Spacer(Modifier.height(32.dp))
         }
     }
+    }
+}
+
+// Scoped to this screen only - admin has no shared shell/bottom-nav owner
+// (unlike EmployeeShell), so adding it here doesn't cascade to admin_home
+// or admin_attendance, which stay on the old theme. Only real destinations
+// are included: no "Reports" tab, since no dedicated screen route exists
+// for it - the mockup's 4th tab has nothing honest to navigate to.
+@Composable
+private fun AdminBottomNavBar(currentRoute: String, onNavigate: (String) -> Unit) {
+    data class NavTab(val route: String, val label: String, val outlined: ImageVector, val filled: ImageVector)
+    val tabs = listOf(
+        NavTab("admin_home", "Home", Icons.Outlined.Home, Icons.Filled.Home),
+        NavTab("admin_attendance", "Attendance", Icons.Outlined.Fingerprint, Icons.Filled.Fingerprint),
+        NavTab("admin_profile", "Profile", Icons.Outlined.Person, Icons.Filled.Person)
+    )
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(64.dp)
+            .background(StitchSurface)
+            .drawBehind {
+                drawLine(
+                    color = StitchOutlineVariant,
+                    start = androidx.compose.ui.geometry.Offset(0f, 0f),
+                    end = androidx.compose.ui.geometry.Offset(size.width, 0f),
+                    strokeWidth = 1.5.dp.toPx()
+                )
+            }
+            .padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.SpaceAround,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        tabs.forEach { tab ->
+            val active = currentRoute == tab.route
+            val tint = if (active) StitchPrimary else StitchOnSurfaceVariant
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.clickable(enabled = !active) { onNavigate(tab.route) }
+            ) {
+                Icon(if (active) tab.filled else tab.outlined, contentDescription = tab.label, tint = tint)
+                Text(tab.label, style = StitchLabelSm, color = tint)
+            }
+        }
     }
 }
 
