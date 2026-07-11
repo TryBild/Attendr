@@ -36,6 +36,8 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.trybild.attendr.ui.components.AttendrButton
 import com.trybild.attendr.ui.components.AttendrTextField
+import com.trybild.attendr.ui.components.IndustrialCard
+import com.trybild.attendr.ui.components.IndustrialSectionLabel
 import com.trybild.attendr.ui.legal.AttendrUrls
 import com.trybild.attendr.ui.legal.LegalMenuRow
 import com.trybild.attendr.ui.theme.*
@@ -176,9 +178,8 @@ fun ProfileScreen(navController: NavController) {
                 ErrorBanner(state.loadError!!)
             }
 
-            // ── Section 1: Account ────────────────────────────────────────
+            // ── Section 1: Account / Personal Information ─────────────────
             Spacer(Modifier.height(8.dp))
-            SectionHeader("Account")
 
             Box(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
@@ -242,38 +243,41 @@ fun ProfileScreen(navController: NavController) {
                 }
             }
 
-            Spacer(Modifier.height(12.dp))
-            AttendrTextField(
-                value = state.adminName,
-                onValueChange = { vm.setAdminName(it) },
-                label = "Full name",
-                enabled = !state.saving
-            )
-
-            Spacer(Modifier.height(12.dp))
-            ReadOnlyField(
-                label = "Email",
-                value = state.email.ifBlank { "Not set" },
-                helper = "Your sign-in email — contact support to change it."
-            )
-
-            Spacer(Modifier.height(12.dp))
-            ReadOnlyField(
-                label = "Mobile number",
-                value = state.mobile.ifBlank { "Not set" },
-                helper = "Used for account contact."
-            )
-
             Spacer(Modifier.height(16.dp))
-            AttendrButton(
-                text = if (state.saving) "Saving…" else "Save",
-                onClick = { vm.save("Profile updated") },
-                enabled = state.accountDirty && !state.saving
-            )
+            IndustrialSectionLabel("Personal Information")
+            IndustrialCard {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    AttendrTextField(
+                        value = state.adminName,
+                        onValueChange = { vm.setAdminName(it) },
+                        label = "Full name",
+                        enabled = !state.saving
+                    )
 
-            Spacer(Modifier.height(28.dp))
-            HorizontalDivider(color = AttendrDivider)
-            Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(12.dp))
+                    ReadOnlyField(
+                        label = "Email",
+                        value = state.email.ifBlank { "Not set" },
+                        helper = "Your sign-in email — contact support to change it."
+                    )
+
+                    Spacer(Modifier.height(12.dp))
+                    ReadOnlyField(
+                        label = "Mobile number",
+                        value = state.mobile.ifBlank { "Not set" },
+                        helper = "Used for account contact."
+                    )
+
+                    Spacer(Modifier.height(16.dp))
+                    AttendrButton(
+                        text = if (state.saving) "Saving…" else "Save",
+                        onClick = { vm.save("Profile updated") },
+                        enabled = state.accountDirty && !state.saving
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(24.dp))
 
             // ── Section 2: Company (read-only) ────────────────────────────
             SectionHeader("Company")
