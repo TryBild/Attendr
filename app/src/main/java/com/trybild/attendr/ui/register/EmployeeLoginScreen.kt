@@ -3,12 +3,14 @@ package com.trybild.attendr.ui.register
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Login
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.CorporateFare
@@ -22,6 +24,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.focus.onFocusChanged
@@ -239,13 +242,35 @@ private fun LoginFormFields(
     Button(
         onClick = onSubmit,
         enabled = isValid && !isLoading,
+        shape = StitchShapeLg,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = StitchPrimary,
+            contentColor = StitchOnPrimary
+        ),
+        elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
         modifier = Modifier.fillMaxWidth().height(56.dp)
     ) {
-        Text(if (isLoading) "Logging in…" else "Login")
+        Text(
+            if (isLoading) "LOGGING IN…" else "LOGIN",
+            style = StitchLabelBold.copy(letterSpacing = 0.1.em)
+        )
+        Spacer(Modifier.width(8.dp))
+        Icon(Icons.AutoMirrored.Outlined.Login, contentDescription = null)
     }
-    Spacer(Modifier.height(12.dp))
-    TextButton(onClick = onSignUp, enabled = !isLoading) {
-        Text("Don't have an account? Sign Up")
+
+    Spacer(Modifier.height(24.dp))
+    HorizontalDivider(color = StitchOutlineVariant, thickness = 1.5.dp)
+    Spacer(Modifier.height(24.dp))
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+        Text("Don't have an account? ", style = StitchBodyMd, color = StitchOnSurfaceVariant)
+        Text(
+            "Sign Up",
+            style = StitchBodyMd.copy(
+                color = StitchPrimary,
+                textDecoration = TextDecoration.Underline
+            ),
+            modifier = Modifier.clickable(onClick = onSignUp)
+        )
     }
 }
 
