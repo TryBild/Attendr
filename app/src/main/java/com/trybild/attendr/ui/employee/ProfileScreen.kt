@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.*
@@ -23,10 +24,12 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.trybild.attendr.BuildConfig
 import com.trybild.attendr.data.local.TokenDataStore
 import com.trybild.attendr.data.model.GeofenceItem
 import com.trybild.attendr.data.repository.AuthRepository
@@ -232,13 +235,18 @@ fun ProfileScreen(outerNavController: NavController) {
 
         Spacer(Modifier.height(24.dp))
 
-        Text("Legal", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold), color = AttendrTextPrimary)
-        LegalMenuRow(label = "Privacy Policy", url = AttendrUrls.PRIVACY)
-        LegalMenuRow(label = "Terms of Service", url = AttendrUrls.TERMS)
-        LegalMenuRow(label = "Contact Support", url = AttendrUrls.CONTACT)
-        LegalMenuRow(label = "Delete Account", url = AttendrUrls.DELETE_ACCOUNT, destructive = true)
+        IndustrialSectionLabel("Legal", modifier = Modifier.align(Alignment.Start))
+        IndustrialCard {
+            LegalMenuRow(label = "Privacy Policy", url = AttendrUrls.PRIVACY)
+            HorizontalDivider(color = StitchOutlineVariant, thickness = 1.dp)
+            LegalMenuRow(label = "Terms of Service", url = AttendrUrls.TERMS)
+            HorizontalDivider(color = StitchOutlineVariant, thickness = 1.dp)
+            LegalMenuRow(label = "Contact Support", url = AttendrUrls.CONTACT)
+            HorizontalDivider(color = StitchOutlineVariant, thickness = 1.dp)
+            LegalMenuRow(label = "Delete Account", url = AttendrUrls.DELETE_ACCOUNT, destructive = true)
+        }
 
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(24.dp))
 
         OutlinedButton(
             onClick = {
@@ -249,12 +257,24 @@ fun ProfileScreen(outerNavController: NavController) {
                     }
                 }
             },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = AttendrError),
-            border = androidx.compose.foundation.BorderStroke(1.dp, AttendrError)
+            modifier = Modifier.fillMaxWidth().height(56.dp),
+            shape = StitchShapeXl,
+            colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White, contentColor = StitchError),
+            border = androidx.compose.foundation.BorderStroke(1.5.dp, StitchError)
         ) {
-            Text("Log Out", style = MaterialTheme.typography.labelLarge)
+            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text("SIGN OUT", style = StitchLabelBold)
         }
+
+        Spacer(Modifier.height(16.dp))
+        Text(
+            "Version ${BuildConfig.VERSION_NAME}",
+            style = StitchLabelSm,
+            color = StitchOutline,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center
+        )
         }
     }
 }

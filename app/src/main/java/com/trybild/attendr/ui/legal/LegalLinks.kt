@@ -11,7 +11,11 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,6 +36,10 @@ import com.trybild.attendr.ui.theme.AttendrError
 import com.trybild.attendr.ui.theme.AttendrNavy
 import com.trybild.attendr.ui.theme.AttendrTextPrimary
 import com.trybild.attendr.ui.theme.AttendrTextSecondary
+import com.trybild.attendr.ui.theme.StitchBodyMd
+import com.trybild.attendr.ui.theme.StitchError
+import com.trybild.attendr.ui.theme.StitchOnSurface
+import com.trybild.attendr.ui.theme.StitchOutline
 
 object AttendrUrls {
     const val PRIVACY = "https://trybild.com/attendr/privacy/"
@@ -137,14 +145,17 @@ fun LegalMenuRow(label: String, url: String, modifier: Modifier = Modifier, dest
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .height(56.dp)
             .clickable { context.openUrl(url) }
-            .padding(vertical = 10.dp),
+            .padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             label,
-            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-            color = if (destructive) AttendrError else AttendrTextPrimary
+            style = StitchBodyMd,
+            color = if (destructive) StitchError else StitchOnSurface
         )
+        Icon(Icons.Outlined.ChevronRight, contentDescription = null, tint = StitchOutline)
     }
 }
