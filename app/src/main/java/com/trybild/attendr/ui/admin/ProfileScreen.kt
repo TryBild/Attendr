@@ -12,7 +12,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Logout
@@ -22,6 +22,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
@@ -32,7 +33,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import com.trybild.attendr.ui.components.AttendrBackground
 import com.trybild.attendr.ui.components.AttendrButton
 import com.trybild.attendr.ui.components.AttendrTextField
 import com.trybild.attendr.ui.legal.AttendrUrls
@@ -124,20 +124,32 @@ fun ProfileScreen(navController: NavController) {
         )
     }
 
-    AttendrBackground(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().background(IndustrialPageBackground)) {
     Scaffold(
         containerColor = Color.Transparent,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
-                title = { Text("Profile") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .background(StitchSurface)
+                    .drawBehind {
+                        drawLine(
+                            color = StitchOutlineVariant,
+                            start = androidx.compose.ui.geometry.Offset(0f, size.height),
+                            end = androidx.compose.ui.geometry.Offset(size.width, size.height),
+                            strokeWidth = 1.5.dp.toPx()
+                        )
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
-            )
+                    .padding(horizontal = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = StitchPrimary)
+                }
+                Text("Settings", style = StitchHeadlineMd, color = StitchPrimary)
+            }
         }
     ) { padding ->
         if (state.loading) {
@@ -154,6 +166,7 @@ fun ProfileScreen(navController: NavController) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .widthIn(max = 640.dp)
                 .padding(horizontal = 24.dp)
                 .verticalScroll(rememberScrollState())
         ) {
