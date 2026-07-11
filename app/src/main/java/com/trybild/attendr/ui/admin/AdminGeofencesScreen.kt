@@ -21,7 +21,6 @@ import androidx.navigation.NavController
 import androidx.compose.ui.platform.LocalContext
 import com.trybild.attendr.data.model.GeofenceItem
 import com.trybild.attendr.ui.components.AttendrBackground
-import com.trybild.attendr.ui.components.AttendrButton
 import com.trybild.attendr.ui.components.AttendrEmptyState
 import com.trybild.attendr.ui.components.AttendrTextField
 import com.trybild.attendr.ui.theme.*
