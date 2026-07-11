@@ -1,5 +1,6 @@
 package com.trybild.attendr.ui.register
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -14,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -32,10 +34,12 @@ import com.trybild.attendr.ui.theme.AttendrTextSecondary
 fun SetPasswordScreen(
     pendingToken: String,
     fullName: String,
-    navController: NavController
+    navController: NavController,
+    purpose: String = "register"
 ) {
     val vm: SetPasswordViewModel = viewModel()
     val state by vm.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
@@ -47,11 +51,19 @@ fun SetPasswordScreen(
     LaunchedEffect(state) {
         when (val s = state) {
             is SetPasswordState.Success -> {
-                val dest = if (s.isAdmin) {
-                    if (s.setupComplete) "admin_home" else "admin_setup"
-                } else "home"
-                navController.navigate(dest) {
-                    popUpTo("welcome") { inclusive = true }
+                if (purpose == "forgot") {
+                    Toast.makeText(context, "Password changed successfully! Please log in.", Toast.LENGTH_LONG).show()
+                    val dest = if (s.isAdmin) "admin_login" else "employee_login"
+                    navController.navigate(dest) {
+                        popUpTo("welcome") { inclusive = true }
+                    }
+                } else {
+                    val dest = if (s.isAdmin) {
+                        if (s.setupComplete) "admin_home" else "admin_setup"
+                    } else "home"
+                    navController.navigate(dest) {
+                        popUpTo("welcome") { inclusive = true }
+                    }
                 }
             }
             is SetPasswordState.Error -> {
@@ -164,7 +176,7 @@ fun SetPasswordScreen(
 
                 AttendrButton(
                     text = if (isLoading) "Setting Password…" else "Set Password & Continue",
-                    onClick = { vm.setPassword(pendingToken, password, confirmPassword) },
+                    onClick = { vm.setPassword(pendingToken, password, confirmPassword, purpose) },
                     enabled = isValid && !isLoading,
                     isLoading = isLoading
                 )

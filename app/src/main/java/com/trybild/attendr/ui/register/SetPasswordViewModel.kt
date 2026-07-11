@@ -23,10 +23,13 @@ class SetPasswordViewModel(app: Application) : AndroidViewModel(app) {
     private val _state = MutableStateFlow<SetPasswordState>(SetPasswordState.Idle)
     val state: StateFlow<SetPasswordState> = _state
 
-    fun setPassword(pendingToken: String, password: String, confirmPassword: String) {
+    fun setPassword(pendingToken: String, password: String, confirmPassword: String, purpose: String = "register") {
         viewModelScope.launch {
             _state.value = SetPasswordState.Loading
-            val result = repo.setEmployeePassword(pendingToken, password, confirmPassword, deviceId)
+            val result = repo.setEmployeePassword(
+                pendingToken, password, confirmPassword, deviceId,
+                persistSession = purpose != "forgot"
+            )
             _state.value = if (result.isSuccess) {
                 val company = result.getOrNull()?.company
                 SetPasswordState.Success(isAdmin = company != null, setupComplete = company?.setupComplete ?: false)
