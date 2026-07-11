@@ -6,6 +6,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -13,12 +14,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Login
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material.icons.outlined.CorporateFare
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -32,6 +35,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.trybild.attendr.ui.components.ErrorToast
+import com.trybild.attendr.ui.legal.LegalFooter
 import com.trybild.attendr.ui.theme.*
 
 // Stitch redesign - "Material 3 industrial" style. Layout structure only in
@@ -137,9 +141,41 @@ fun EmployeeLoginScreen(navController: NavController) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .widthIn(max = 640.dp)
-                    .padding(horizontal = 16.dp),
+                    .padding(horizontal = 16.dp, vertical = 32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
-            ) {}
+            ) {
+                Row(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(StitchSurfaceContainerLow)
+                        .border(1.dp, StitchOutlineVariant.copy(alpha = 0.3f), CircleShape)
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        Icons.Filled.VerifiedUser,
+                        contentDescription = null,
+                        tint = StitchSecondary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        "Trusted by 10,000+ businesses across India",
+                        style = StitchLabelSm,
+                        color = StitchOnSurfaceVariant
+                    )
+                }
+                Spacer(Modifier.height(16.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("ENGLISH", style = StitchLabelSm, color = StitchPrimary)
+                    Text("|", style = StitchLabelSm, color = StitchOutline)
+                    Text("हिंदी", style = StitchLabelSm, color = StitchOnSurfaceVariant.copy(alpha = 0.6f))
+                    Text("|", style = StitchLabelSm, color = StitchOutline)
+                    Text("मराठी", style = StitchLabelSm, color = StitchOnSurfaceVariant.copy(alpha = 0.6f))
+                }
+                Spacer(Modifier.height(16.dp))
+                LegalFooter()
+            }
         }
 
         ErrorToast(
