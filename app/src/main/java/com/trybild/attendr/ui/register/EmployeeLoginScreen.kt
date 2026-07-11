@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.CorporateFare
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,6 +23,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -199,23 +201,40 @@ private fun LoginFormFields(
             }
         )
     }
-    Spacer(Modifier.height(16.dp))
-    OutlinedTextField(
-        value = password,
-        onValueChange = onPasswordChange,
-        label = { Text("Password") },
-        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-        trailingIcon = {
-            IconButton(onClick = onTogglePasswordVisible) {
-                Icon(
-                    imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                    contentDescription = if (passwordVisible) "Hide password" else "Show password"
+    Column {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            StitchFieldLabel("Password")
+            TextButton(onClick = onForgotPassword, enabled = !isLoading, contentPadding = PaddingValues(0.dp)) {
+                Text(
+                    "FORGOT PASSWORD?",
+                    style = StitchLabelSm.copy(letterSpacing = 0.025.em),
+                    color = StitchPrimary
                 )
             }
-        },
-        enabled = !isLoading,
-        modifier = Modifier.fillMaxWidth()
-    )
+        }
+        Spacer(Modifier.height(4.dp))
+        StitchTextField(
+            value = password,
+            onValueChange = onPasswordChange,
+            placeholder = "••••••••",
+            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            enabled = !isLoading,
+            leading = { Icon(Icons.Outlined.Lock, contentDescription = null, tint = StitchOutline) },
+            trailing = {
+                IconButton(onClick = onTogglePasswordVisible, modifier = Modifier.size(24.dp)) {
+                    Icon(
+                        imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                        contentDescription = if (passwordVisible) "Hide password" else "Show password",
+                        tint = StitchOutline
+                    )
+                }
+            }
+        )
+    }
     Spacer(Modifier.height(16.dp))
     Button(
         onClick = onSubmit,
@@ -225,9 +244,6 @@ private fun LoginFormFields(
         Text(if (isLoading) "Logging in…" else "Login")
     }
     Spacer(Modifier.height(12.dp))
-    TextButton(onClick = onForgotPassword, enabled = !isLoading) {
-        Text("Forgot Password?")
-    }
     TextButton(onClick = onSignUp, enabled = !isLoading) {
         Text("Don't have an account? Sign Up")
     }
