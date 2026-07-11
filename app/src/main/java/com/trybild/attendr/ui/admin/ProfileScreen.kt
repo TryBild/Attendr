@@ -28,8 +28,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -279,112 +281,90 @@ fun ProfileScreen(navController: NavController) {
 
             Spacer(Modifier.height(24.dp))
 
-            // ── Section 2: Company (read-only) ────────────────────────────
-            SectionHeader("Company")
-
-            ReadOnlyField(label = "Company name", value = state.orgName.ifBlank { "—" })
-            Spacer(Modifier.height(12.dp))
-
-            // Org ID with copy button (same clipboard pattern as registration)
+            // ── Section 2+3: Company Settings ──────────────────────────────
             var copied by remember { mutableStateOf(false) }
-            Text(
-                "Org ID",
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = AttendrTextPrimary
-            )
-            Spacer(Modifier.height(6.dp))
-            OutlinedCard(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp),
-                colors = CardDefaults.outlinedCardColors(containerColor = AttendrSurface),
-                border = BorderStroke(1.dp, AttendrBorder)
-            ) {
+            IndustrialSectionLabel("Company Settings")
+            IndustrialCard {
+                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                    Text("COMPANY NAME", style = StitchLabelSm.copy(letterSpacing = 0.05.em), color = StitchOutline)
+                    Text(state.orgName.ifBlank { "—" }, style = StitchBodyLg, color = StitchOnSurface)
+                }
+                HorizontalDivider(color = StitchOutlineVariant, thickness = 1.dp)
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        state.orgId.ifBlank { "—" },
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                        color = AttendrNavy,
-                        modifier = Modifier.weight(1f)
-                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("ORGANIZATION ID", style = StitchLabelSm.copy(letterSpacing = 0.05.em), color = StitchOutline)
+                        Text(
+                            state.orgId.ifBlank { "—" },
+                            style = StitchBodyMd.copy(fontFamily = FontFamily.Monospace),
+                            color = StitchOnSurface
+                        )
+                    }
                     if (state.orgId.isNotBlank()) {
-                        TextButton(onClick = {
+                        IconButton(onClick = {
                             clipboardManager.setText(AnnotatedString(state.orgId))
                             copied = true
                         }) {
-                            Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(6.dp))
-                            Text(if (copied) "Copied!" else "Copy")
+                            Icon(
+                                Icons.Default.ContentCopy,
+                                contentDescription = if (copied) "Copied" else "Copy Organization ID",
+                                tint = StitchPrimary
+                            )
                         }
                     }
                 }
-            }
+                HorizontalDivider(color = StitchOutlineVariant, thickness = 1.dp)
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("WORK DAYS", style = StitchLabelSm.copy(letterSpacing = 0.05.em), color = StitchOutline)
+                    Spacer(Modifier.height(8.dp))
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun").forEach { day ->
+                            FilterChip(
+                                selected = state.workDays.contains(day),
+                                onClick = { if (!state.saving) vm.toggleWorkDay(day) },
+                                label = { Text(day) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = StitchPrimary,
+                                    selectedLabelColor = Color.White
+                                )
+                            )
+                        }
+                    }
 
-            Spacer(Modifier.height(28.dp))
-            HorizontalDivider(color = AttendrDivider)
-            Spacer(Modifier.height(16.dp))
-
-            // ── Section 3: Company settings ───────────────────────────────
-            SectionHeader("Company settings")
-
-            Text(
-                "Work days",
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = AttendrTextPrimary
-            )
-            Spacer(Modifier.height(8.dp))
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun").forEach { day ->
-                    FilterChip(
-                        selected = state.workDays.contains(day),
-                        onClick = { if (!state.saving) vm.toggleWorkDay(day) },
-                        label = { Text(day) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = AttendrNavy,
-                            selectedLabelColor = Color.White
+                    Spacer(Modifier.height(16.dp))
+                    Text("WORK SCHEDULE", style = StitchLabelSm.copy(letterSpacing = 0.05.em), color = StitchOutline)
+                    Spacer(Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        ProfileTimeButton(
+                            label = "Start Time",
+                            value = formatTimeDisplay(state.workStartTime),
+                            onClick = { if (!state.saving) showStartTimePicker = true },
+                            modifier = Modifier.weight(1f)
                         )
+                        ProfileTimeButton(
+                            label = "End Time",
+                            value = formatTimeDisplay(state.workEndTime),
+                            onClick = { if (!state.saving) showEndTimePicker = true },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+                    AttendrButton(
+                        text = if (state.saving) "Saving…" else "Save settings",
+                        onClick = { vm.save("Company settings updated") },
+                        enabled = state.settingsDirty && state.settingsValid && !state.saving
                     )
                 }
             }
 
-            Spacer(Modifier.height(16.dp))
-            Text(
-                "Work hours",
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = AttendrTextPrimary
-            )
-            Spacer(Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                ProfileTimeButton(
-                    label = "Start Time",
-                    value = formatTimeDisplay(state.workStartTime),
-                    onClick = { if (!state.saving) showStartTimePicker = true },
-                    modifier = Modifier.weight(1f)
-                )
-                ProfileTimeButton(
-                    label = "End Time",
-                    value = formatTimeDisplay(state.workEndTime),
-                    onClick = { if (!state.saving) showEndTimePicker = true },
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            Spacer(Modifier.height(16.dp))
-            AttendrButton(
-                text = if (state.saving) "Saving…" else "Save settings",
-                onClick = { vm.save("Company settings updated") },
-                enabled = state.settingsDirty && state.settingsValid && !state.saving
-            )
-
-            Spacer(Modifier.height(28.dp))
-            HorizontalDivider(color = AttendrDivider)
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(24.dp))
 
             // ── Section 4: Geofence locations ────────────────────────────
             SectionHeader("Geofence Locations")
