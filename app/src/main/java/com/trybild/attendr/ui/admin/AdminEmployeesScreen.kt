@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import com.trybild.attendr.data.model.AdminEmployeeItem
 import com.trybild.attendr.ui.components.AttendrBackground
 import com.trybild.attendr.ui.theme.*
@@ -334,7 +335,7 @@ private fun StatusChip(label: String, color: Color) {
 }
 
 @Composable
-fun AvatarCircle(name: String, size: Int) {
+fun AvatarCircle(name: String, size: Int, photoUrl: String? = null) {
     val initials = name.trim().split("\\s+".toRegex())
         .filter { it.isNotEmpty() }.take(2)
         .joinToString("") { it[0].uppercaseChar().toString() }
@@ -345,12 +346,20 @@ fun AvatarCircle(name: String, size: Int) {
             .background(AttendrNavy.copy(alpha = 0.15f)),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            initials.ifEmpty { "?" },
-            style = if (size >= 48) MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                    else MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-            color = AttendrNavy
-        )
+        if (photoUrl != null) {
+            AsyncImage(
+                model = photoUrl,
+                contentDescription = "Profile photo",
+                modifier = Modifier.fillMaxSize().clip(CircleShape)
+            )
+        } else {
+            Text(
+                initials.ifEmpty { "?" },
+                style = if (size >= 48) MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                        else MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                color = AttendrNavy
+            )
+        }
     }
 }
 
