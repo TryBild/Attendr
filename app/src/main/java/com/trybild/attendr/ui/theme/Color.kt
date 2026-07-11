@@ -70,3 +70,9 @@ val StitchOutline               = Color(0xFF737685)
 val StitchOutlineVariant        = Color(0xFFC3C6D6)
 val StitchInverseSurface        = Color(0xFF233144)
 val StitchInverseOnSurface      = Color(0xFFEAF1FF)
+
+// Profile screen's ".industrial-card" surface + page background (distinct from
+// the Surface* tokens above - these are literal mockup values, not M3 roles).
+val IndustrialCardBackground  = Color(0xFFFFFFFF)
+val IndustrialCardBorder      = Color(0xFFE2E8F0)   // 1.5dp border
+val IndustrialPageBackground  = Color(0xFFF8FAFC)
