@@ -2,22 +2,27 @@ package com.trybild.attendr.ui.register
 
 import android.net.Uri
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.outlined.CorporateFare
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -159,22 +164,41 @@ private fun LoginFormFields(
     onForgotPassword: () -> Unit,
     onSignUp: () -> Unit
 ) {
-    OutlinedTextField(
-        value = orgId,
-        onValueChange = onOrgIdChange,
-        label = { Text("Company Code / Team ID") },
-        enabled = !isLoading,
-        modifier = Modifier.fillMaxWidth()
-    )
+    Column {
+        StitchFieldLabel("Company Code / Team ID")
+        Spacer(Modifier.height(4.dp))
+        StitchTextField(
+            value = orgId,
+            onValueChange = onOrgIdChange,
+            placeholder = "Ex: FACTORY01",
+            enabled = !isLoading,
+            leading = { Icon(Icons.Outlined.CorporateFare, contentDescription = null, tint = StitchOutline) }
+        )
+    }
     Spacer(Modifier.height(16.dp))
-    OutlinedTextField(
-        value = mobile,
-        onValueChange = onMobileChange,
-        label = { Text("Mobile Number") },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        enabled = !isLoading,
-        modifier = Modifier.fillMaxWidth()
-    )
+    Column {
+        StitchFieldLabel("Mobile Number")
+        Spacer(Modifier.height(4.dp))
+        StitchTextField(
+            value = mobile,
+            onValueChange = onMobileChange,
+            placeholder = "Enter 10-digit number",
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            enabled = !isLoading,
+            leading = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("+91", style = StitchLabelBold, color = StitchOnSurfaceVariant)
+                    Spacer(Modifier.width(12.dp))
+                    Box(
+                        Modifier
+                            .width(1.5.dp)
+                            .height(24.dp)
+                            .background(StitchOutlineVariant)
+                    )
+                }
+            }
+        )
+    }
     Spacer(Modifier.height(16.dp))
     OutlinedTextField(
         value = password,
@@ -206,5 +230,74 @@ private fun LoginFormFields(
     }
     TextButton(onClick = onSignUp, enabled = !isLoading) {
         Text("Don't have an account? Sign Up")
+    }
+}
+
+@Composable
+private fun StitchFieldLabel(text: String) {
+    Text(
+        text.uppercase(),
+        style = StitchLabelBold,
+        color = StitchOnSurfaceVariant
+    )
+}
+
+@Composable
+private fun StitchTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    leading: @Composable (() -> Unit)? = null,
+    trailing: @Composable (() -> Unit)? = null
+) {
+    var focused by remember { mutableStateOf(false) }
+    val borderColor = if (focused) StitchPrimary else StitchOutlineVariant
+    val borderWidth = if (focused) 2.dp else 1.5.dp
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(48.dp)
+            .background(StitchSurfaceContainerLowest, StitchShapeLg)
+            .border(borderWidth, borderColor, StitchShapeLg)
+    ) {
+        BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            enabled = enabled,
+            singleLine = true,
+            keyboardOptions = keyboardOptions,
+            visualTransformation = visualTransformation,
+            textStyle = StitchBodyMd.copy(color = StitchOnSurface),
+            cursorBrush = SolidColor(StitchPrimary),
+            modifier = Modifier
+                .fillMaxSize()
+                .onFocusChanged { focused = it.isFocused },
+            decorationBox = { inner ->
+                Row(
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (leading != null) {
+                        leading()
+                        Spacer(Modifier.width(8.dp))
+                    }
+                    Box(modifier = Modifier.weight(1f)) {
+                        if (value.isEmpty()) {
+                            Text(placeholder, style = StitchBodyMd, color = StitchOutline.copy(alpha = 0.5f))
+                        }
+                        inner()
+                    }
+                    if (trailing != null) {
+                        Spacer(Modifier.width(8.dp))
+                        trailing()
+                    }
+                }
+            }
+        )
     }
 }
