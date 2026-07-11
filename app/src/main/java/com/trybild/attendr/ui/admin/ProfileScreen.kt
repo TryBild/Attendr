@@ -14,10 +14,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -30,6 +32,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -39,6 +42,7 @@ import coil.compose.AsyncImage
 import com.trybild.attendr.ui.components.AttendrButton
 import com.trybild.attendr.ui.components.AttendrTextField
 import com.trybild.attendr.ui.components.IndustrialCard
+import com.trybild.attendr.ui.components.IndustrialCardRow
 import com.trybild.attendr.ui.components.IndustrialSectionLabel
 import com.trybild.attendr.ui.legal.AttendrUrls
 import com.trybild.attendr.ui.legal.LegalMenuRow
@@ -367,106 +371,92 @@ fun ProfileScreen(navController: NavController) {
             Spacer(Modifier.height(24.dp))
 
             // ── Section 4: Geofence locations ────────────────────────────
-            SectionHeader("Geofence Locations")
-
-            if (state.geofences.isEmpty()) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = AttendrSurface),
-                    elevation = CardDefaults.cardElevation(2.dp)
-                ) {
+            IndustrialSectionLabel("Geofence Locations")
+            IndustrialCard {
+                if (state.geofences.isEmpty()) {
                     Column(
                         modifier = Modifier.padding(16.dp).fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Icon(Icons.Default.LocationOn, contentDescription = null, tint = AttendrTextSecondary, modifier = Modifier.size(32.dp))
+                        Icon(Icons.Default.LocationOn, contentDescription = null, tint = StitchOutline, modifier = Modifier.size(32.dp))
                         Spacer(Modifier.height(8.dp))
-                        Text("No geofence set", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium), color = AttendrTextPrimary)
-                        Text("Add a location for attendance tracking.", style = MaterialTheme.typography.bodySmall, color = AttendrTextSecondary)
+                        Text("No geofence set", style = StitchBodyMd, color = StitchOnSurface)
+                        Text("Add a location for attendance tracking.", style = StitchLabelSm, color = StitchOutline)
                     }
-                }
-            } else {
-                state.geofences.forEach { gf ->
-                    Card(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = AttendrSurface),
-                        elevation = CardDefaults.cardElevation(2.dp)
-                    ) {
+                } else {
+                    state.geofences.forEachIndexed { index, gf ->
+                        if (index > 0) HorizontalDivider(color = StitchOutlineVariant, thickness = 1.dp)
                         Row(
-                            modifier = Modifier.padding(12.dp),
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Icon(Icons.Default.LocationOn, contentDescription = null, tint = AttendrNavy, modifier = Modifier.size(24.dp))
+                            Icon(Icons.Default.LocationOn, contentDescription = null, tint = StitchOnSurfaceVariant)
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(gf.name, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold), color = AttendrTextPrimary)
-                                Text("Radius: ${gf.radiusMeters.toInt()}m", style = MaterialTheme.typography.bodySmall, color = AttendrTextSecondary)
+                                Text(gf.name, style = StitchBodyLg, color = StitchOnSurface)
+                                Text("Radius: ${gf.radiusMeters.toInt()}m", style = StitchLabelSm, color = StitchOutline)
                             }
                         }
                     }
                 }
-            }
-
-            Spacer(Modifier.height(12.dp))
-            AttendrButton(
-                text = "Manage Geofences",
-                onClick = { navController.navigate("admin_geofences") }
-            )
-
-            Spacer(Modifier.height(28.dp))
-            HorizontalDivider(color = AttendrDivider)
-            Spacer(Modifier.height(16.dp))
-
-            // ── Section 5: Billing ────────────────────────────────────────
-            SectionHeader("Billing")
-            AttendrButton(
-                text = "Manage Subscription",
-                onClick = { navController.navigate("subscription") }
-            )
-
-            Spacer(Modifier.height(28.dp))
-            HorizontalDivider(color = AttendrDivider)
-            Spacer(Modifier.height(16.dp))
-
-            // ── Section 6: App info + logout ──────────────────────────────
-            SectionHeader("About")
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text("App version", style = MaterialTheme.typography.bodyMedium, color = AttendrTextSecondary)
-                Text(
-                    state.appVersion,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                    color = AttendrTextPrimary
+                HorizontalDivider(color = StitchOutlineVariant, thickness = 1.dp)
+                IndustrialCardRow(
+                    icon = Icons.Default.LocationOn,
+                    label = "Manage Geofences",
+                    onClick = { navController.navigate("admin_geofences") },
+                    trailing = { Icon(Icons.Outlined.ChevronRight, contentDescription = null, tint = StitchOutline) }
                 )
             }
 
-            Spacer(Modifier.height(28.dp))
-            HorizontalDivider(color = AttendrDivider)
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(24.dp))
+
+            // ── Section 5+6: App Settings (Billing + About) ────────────────
+            IndustrialSectionLabel("App Settings")
+            IndustrialCard {
+                IndustrialCardRow(
+                    icon = Icons.Default.CreditCard,
+                    label = "Manage Subscription",
+                    onClick = { navController.navigate("subscription") },
+                    trailing = { Icon(Icons.Outlined.ChevronRight, contentDescription = null, tint = StitchOutline) }
+                )
+            }
+
+            Spacer(Modifier.height(24.dp))
 
             // ── Section 7: Legal ───────────────────────────────────────────
-            SectionHeader("Legal")
-            LegalMenuRow(label = "Privacy Policy", url = AttendrUrls.PRIVACY)
-            LegalMenuRow(label = "Terms of Service", url = AttendrUrls.TERMS)
-            LegalMenuRow(label = "Contact Support", url = AttendrUrls.CONTACT)
-            LegalMenuRow(label = "Delete Account", url = AttendrUrls.DELETE_ACCOUNT, destructive = true)
+            IndustrialSectionLabel("Legal")
+            IndustrialCard {
+                LegalMenuRow(label = "Privacy Policy", url = AttendrUrls.PRIVACY)
+                HorizontalDivider(color = StitchOutlineVariant, thickness = 1.dp)
+                LegalMenuRow(label = "Terms of Service", url = AttendrUrls.TERMS)
+                HorizontalDivider(color = StitchOutlineVariant, thickness = 1.dp)
+                LegalMenuRow(label = "Contact Support", url = AttendrUrls.CONTACT)
+                HorizontalDivider(color = StitchOutlineVariant, thickness = 1.dp)
+                LegalMenuRow(label = "Delete Account", url = AttendrUrls.DELETE_ACCOUNT, destructive = true)
+            }
 
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(24.dp))
+
             OutlinedButton(
                 onClick = { showLogoutDialog = true },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
-                shape = RoundedCornerShape(8.dp),
-                border = BorderStroke(1.dp, AttendrError),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = AttendrError)
+                shape = StitchShapeXl,
+                border = BorderStroke(1.5.dp, StitchError),
+                colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White, contentColor = StitchError)
             ) {
-                Icon(Icons.Default.Logout, contentDescription = null, modifier = Modifier.size(18.dp))
+                Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Log Out")
+                Text("SIGN OUT", style = StitchLabelBold)
             }
+
+            Spacer(Modifier.height(16.dp))
+            Text(
+                "Version ${state.appVersion}",
+                style = StitchLabelSm,
+                color = StitchOutline,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
 
             Spacer(Modifier.height(32.dp))
         }
@@ -475,16 +465,6 @@ fun ProfileScreen(navController: NavController) {
 }
 
 // ── Private composables / helpers ───────────────────────────────────────────
-
-@Composable
-private fun SectionHeader(title: String) {
-    Text(
-        title,
-        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-        color = AttendrTextPrimary,
-        modifier = Modifier.padding(bottom = 12.dp)
-    )
-}
 
 @Composable
 private fun ErrorBanner(message: String) {
