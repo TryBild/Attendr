@@ -45,6 +45,7 @@ fun HomeScreen(
     val logs by vm.logs.collectAsState()
     val recent by vm.recent.collectAsState()
     val employeeName by vm.employeeName.collectAsState()
+    val photoUrl by vm.photoUrl.collectAsState()
     val badge by vm.badge.collectAsState()
     val isMockDetected by vm.mockDetected.collectAsState()
     val notifyingAdmin by vm.notifyingAdmin.collectAsState()
@@ -138,7 +139,7 @@ fun HomeScreen(
                 .clip(CircleShape)
                 .clickable { onOpenProfile() }
         ) {
-            AvatarCircle(name = employeeName.ifBlank { "Employee" }, size = 72)
+            AvatarCircle(name = employeeName.ifBlank { "Employee" }, size = 72, photoUrl = photoUrl)
         }
         Spacer(Modifier.height(20.dp))
 

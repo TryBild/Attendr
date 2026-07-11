@@ -65,6 +65,9 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     private val _employeeName = MutableStateFlow("")
     val employeeName: StateFlow<String> = _employeeName
 
+    private val _photoUrl = MutableStateFlow<String?>(null)
+    val photoUrl: StateFlow<String?> = _photoUrl
+
     private val _badge = MutableStateFlow<GeofenceBadge>(GeofenceBadge.Loading)
     val badge: StateFlow<GeofenceBadge> = _badge
 
@@ -88,6 +91,7 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         loadGeofences()
         viewModelScope.launch {
             _employeeName.value = dataStore.employeeName.firstOrNull() ?: ""
+            _photoUrl.value = dataStore.photoUrl.firstOrNull()
         }
     }
 

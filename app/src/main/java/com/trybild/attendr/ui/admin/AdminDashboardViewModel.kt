@@ -44,7 +44,8 @@ data class AdminDashboardState(
     val recentActivity: List<RecentActivityItem> = emptyList(),
     val exportLoading: Boolean = false,
     val billingStatus: String = "",
-    val trialDaysLeft: Int = 0
+    val trialDaysLeft: Int = 0,
+    val photoUrl: String? = null
 )
 
 class AdminDashboardViewModel(app: Application) : AndroidViewModel(app) {
@@ -64,7 +65,8 @@ class AdminDashboardViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val cachedOrgName = dataStore.companyName.firstOrNull() ?: ""
             val cachedOrgId = dataStore.orgId.firstOrNull() ?: ""
-            _state.update { it.copy(orgName = cachedOrgName, orgId = cachedOrgId) }
+            val cachedPhotoUrl = dataStore.photoUrl.firstOrNull()
+            _state.update { it.copy(orgName = cachedOrgName, orgId = cachedOrgId, photoUrl = cachedPhotoUrl) }
 
             val profileDeferred = async { repo.adminProfile() }
             val dashboardDeferred = async { repo.adminDashboard() }
@@ -78,7 +80,8 @@ class AdminDashboardViewModel(app: Application) : AndroidViewModel(app) {
                     it.copy(
                         orgName = p.orgName ?: cachedOrgName,
                         adminName = p.adminName ?: "",
-                        orgId = p.orgId ?: cachedOrgId
+                        orgId = p.orgId ?: cachedOrgId,
+                        photoUrl = p.photoUrl ?: cachedPhotoUrl
                     )
                 }
             }

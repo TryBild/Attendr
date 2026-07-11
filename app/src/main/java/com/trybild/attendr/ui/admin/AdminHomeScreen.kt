@@ -104,20 +104,12 @@ fun AdminHomeScreen(navController: NavController) {
                         tint = AttendrTextSecondary
                     )
                 }
-                val initials = nameInitials(state.adminName)
                 Box(
                     modifier = Modifier
-                        .size(36.dp)
                         .clip(CircleShape)
-                        .background(AttendrNavy)
-                        .clickable { navController.navigate("admin_profile") },
-                    contentAlignment = Alignment.Center
+                        .clickable { navController.navigate("admin_profile") }
                 ) {
-                    Text(
-                        initials.ifEmpty { "A" },
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                        color = Color.White
-                    )
+                    AvatarCircle(name = state.adminName.ifEmpty { "Admin" }, size = 36, photoUrl = state.photoUrl)
                 }
             }
 
