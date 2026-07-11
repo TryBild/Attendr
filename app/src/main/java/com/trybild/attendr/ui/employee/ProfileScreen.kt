@@ -199,28 +199,31 @@ fun ProfileScreen(outerNavController: NavController) {
 
         Spacer(Modifier.height(24.dp))
 
-        // Assigned geofences
-        Text("Office Locations", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold), color = AttendrTextPrimary)
-        Spacer(Modifier.height(8.dp))
+        // Assigned geofences - read-only "Company Settings" for employees
+        IndustrialSectionLabel("Company Settings", modifier = Modifier.align(Alignment.Start))
         if (geofences.isEmpty()) {
-            AttendrEmptyState(
-                icon = Icons.Default.LocationOn,
-                title = "No geofence assigned",
-                description = "Contact your admin to set up office locations"
-            )
+            IndustrialCard {
+                Box(modifier = Modifier.padding(16.dp)) {
+                    AttendrEmptyState(
+                        icon = Icons.Default.LocationOn,
+                        title = "No geofence assigned",
+                        description = "Contact your admin to set up office locations"
+                    )
+                }
+            }
         } else {
-            geofences.forEach { gf ->
-                Card(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = AttendrSurface),
-                    elevation = CardDefaults.cardElevation(2.dp)
-                ) {
-                    Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Icon(Icons.Default.LocationOn, contentDescription = null, tint = AttendrNavy, modifier = Modifier.size(24.dp))
+            IndustrialCard {
+                geofences.forEachIndexed { index, gf ->
+                    if (index > 0) HorizontalDivider(color = StitchOutlineVariant, thickness = 1.dp)
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Icon(Icons.Default.LocationOn, contentDescription = null, tint = StitchOnSurfaceVariant)
                         Column {
-                            Text(gf.name, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold), color = AttendrTextPrimary)
-                            Text("Radius: ${gf.radiusMeters.toInt()}m", style = MaterialTheme.typography.bodySmall, color = AttendrTextSecondary)
+                            Text(gf.name, style = StitchBodyLg, color = StitchOnSurface)
+                            Text("Radius: ${gf.radiusMeters.toInt()}m", style = StitchLabelSm, color = StitchOutline)
                         }
                     }
                 }
