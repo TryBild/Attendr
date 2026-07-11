@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -73,9 +74,25 @@ fun EmployeeLoginScreen(navController: NavController) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .widthIn(max = 640.dp)
-                    .padding(horizontal = 16.dp),
+                    .padding(start = 16.dp, end = 16.dp, top = 48.dp, bottom = 32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
-            ) {}
+            ) {
+                Text("Attendr", style = StitchDisplay, color = StitchPrimary)
+                Spacer(Modifier.height(24.dp))
+                Text(
+                    "Welcome to Attendr",
+                    style = StitchHeadlineLgMobile,
+                    color = StitchOnSurface,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "Login to mark your attendance",
+                    style = StitchBodyMd,
+                    color = StitchOnSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+            }
 
             // ── Form section ────────────────────────────────────────────
             Column(
