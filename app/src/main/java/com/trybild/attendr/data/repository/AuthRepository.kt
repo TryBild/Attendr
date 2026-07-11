@@ -85,23 +85,26 @@ class AuthRepository(context: Context) {
     }
 
     suspend fun setEmployeePassword(
-        pendingToken: String, password: String, confirmPassword: String, deviceId: String? = null
+        pendingToken: String, password: String, confirmPassword: String, deviceId: String? = null,
+        persistSession: Boolean = true
     ): Result<AuthResponse> {
         return try {
             val res = api.setPassword(SetPasswordRequest(pendingToken, password, confirmPassword, deviceId))
             if (res.isSuccessful && res.body()?.ok == true) {
                 val body = res.body()!!
-                body.token?.let { dataStore.saveToken(it) }
-                if (body.company != null) {
-                    dataStore.saveUserKind("admin")
-                    dataStore.saveCompanyName(body.company.name)
-                    body.company.photoUrl?.let { dataStore.savePhotoUrl(it) }
-                } else {
-                    dataStore.saveUserKind("employee")
-                    body.employee?.fullName?.let { dataStore.saveEmployeeName(it) }
-                    body.employee?.company?.name?.let { dataStore.saveCompanyName(it) }
-                    body.employee?.joinedAt?.let { dataStore.saveEmployeeJoinedAt(it) }
-                    body.employee?.photoUrl?.let { dataStore.savePhotoUrl(it) }
+                if (persistSession) {
+                    body.token?.let { dataStore.saveToken(it) }
+                    if (body.company != null) {
+                        dataStore.saveUserKind("admin")
+                        dataStore.saveCompanyName(body.company.name)
+                        body.company.photoUrl?.let { dataStore.savePhotoUrl(it) }
+                    } else {
+                        dataStore.saveUserKind("employee")
+                        body.employee?.fullName?.let { dataStore.saveEmployeeName(it) }
+                        body.employee?.company?.name?.let { dataStore.saveCompanyName(it) }
+                        body.employee?.joinedAt?.let { dataStore.saveEmployeeJoinedAt(it) }
+                        body.employee?.photoUrl?.let { dataStore.savePhotoUrl(it) }
+                    }
                 }
                 Result.success(body)
             } else {

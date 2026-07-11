@@ -150,16 +150,18 @@ fun AppNav() {
         }
 
         composable(
-            route = "set_password?pendingToken={pendingToken}&fullName={fullName}",
+            route = "set_password?pendingToken={pendingToken}&fullName={fullName}&purpose={purpose}",
             arguments = listOf(
                 navArgument("pendingToken") { defaultValue = "" },
-                navArgument("fullName") { defaultValue = "" }
+                navArgument("fullName") { defaultValue = "" },
+                navArgument("purpose") { defaultValue = "register" }
             )
         ) { backStackEntry ->
             SetPasswordScreen(
                 pendingToken = backStackEntry.arguments?.getString("pendingToken") ?: "",
                 fullName = backStackEntry.arguments?.getString("fullName") ?: "",
-                navController = navController
+                navController = navController,
+                purpose = backStackEntry.arguments?.getString("purpose") ?: "register"
             )
         }
 

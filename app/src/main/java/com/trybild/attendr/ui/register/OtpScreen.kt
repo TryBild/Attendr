@@ -71,7 +71,7 @@ fun OtpScreen(
         when (val s = state) {
             is OtpUiState.Verified -> {
                 navController.navigate(
-                    "set_password?pendingToken=${Uri.encode(s.pendingToken)}&fullName=${Uri.encode(s.fullName)}"
+                    "set_password?pendingToken=${Uri.encode(s.pendingToken)}&fullName=${Uri.encode(s.fullName)}&purpose=${Uri.encode(purpose)}"
                 )
                 vm.resetState()
             }
